@@ -7,7 +7,7 @@ SECRET_KEY = 'django-insecure-replace-this-with-a-secret'
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost','cybilcut.pythonanywhere.com']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
