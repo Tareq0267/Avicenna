@@ -1,0 +1,12 @@
+from django.urls import path
+from . import views
+
+app_name = 'tracker'
+
+urlpatterns = [
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('', views.dashboard, name='dashboard-root'),
+    path('import-json/', views.import_json, name='import_json'),
+    path('add-weight/', views.add_weight, name='add_weight'),
+    path('daily-recap/<str:date_str>/', views.daily_recap, name='daily_recap'),
+]

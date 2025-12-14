@@ -1,0 +1,621 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Activity Heatmap -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="chart-card">
+      <h6 class="chart-title mb-2"><i class="bi bi-calendar3 me-2"></i>Activity Heatmap</h6>
+      <div id="heatmapChart" class="heatmap-container"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4">
+    <div class="stat-card">
+      <div class="stat-icon cal-icon"><i class="bi bi-fire"></i></div>
+      <div class="stat-info">
+        <span class="stat-label">Calories (7d)</span>
+        <span class="stat-value">{{ total_calories|default:0 }} <small>kcal</small></span>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="stat-card">
+      <div class="stat-icon ex-icon"><i class="bi bi-lightning-charge"></i></div>
+      <div class="stat-info">
+        <span class="stat-label">Exercise (7d)</span>
+        <span class="stat-value">{{ total_exercise_min|default:0 }} <small>min</small></span>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="stat-card">
+      <div class="stat-icon wt-icon"><i class="bi bi-speedometer2"></i></div>
+      <div class="stat-info">
+        <span class="stat-label">Latest Weight</span>
+        <span class="stat-value">{% if latest_weight %}{{ latest_weight }} <small>kg</small>{% else %}—{% endif %}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-6">
+    <div class="chart-card">
+      <h6 class="chart-title">Daily Calories</h6>
+      <div id="calChart" class="chart-container position-relative">
+        <div id="calChartEmpty" class="chart-empty-state d-none">
+          <i class="bi bi-fire"></i>
+          <p>No calorie data yet</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="chart-card">
+      <h6 class="chart-title">Exercise Minutes</h6>
+      <div id="exChart" class="chart-container position-relative">
+        <div id="exChartEmpty" class="chart-empty-state d-none">
+          <i class="bi bi-lightning-charge"></i>
+          <p>No exercise data yet</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-6">
+    <div class="chart-card">
+      <h6 class="chart-title">Weight Trend</h6>
+      <div id="wtChart" class="chart-container position-relative">
+        <div id="wtChartEmpty" class="chart-empty-state d-none">
+          <i class="bi bi-speedometer2"></i>
+          <p>No weight data yet</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="chart-card">
+      <h6 class="chart-title">Recent Entries</h6>
+      <ul class="nav nav-tabs" id="entryTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="diet-tab" data-bs-toggle="tab" data-bs-target="#diet" type="button">Diet</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="ex-tab" data-bs-toggle="tab" data-bs-target="#exercise" type="button">Exercise</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="wt-tab" data-bs-toggle="tab" data-bs-target="#weight" type="button">Weight</button>
+        </li>
+      </ul>
+      <div class="tab-content pt-3" id="entryTabsContent">
+        <div class="tab-pane fade show active" id="diet" role="tabpanel">
+          <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
+          <table class="table table-sm align-middle">
+            <thead><tr><th>Date</th><th>Item</th><th>Calories</th></tr></thead>
+            <tbody>
+            {% for e in dietary_recent %}
+              <tr>
+                <td>{{ e.date }}</td>
+                <td>{{ e.item|default:"-" }}{% if e.notes %} <small class="text-muted">({{ e.notes }})</small>{% endif %}</td>
+                <td>{{ e.calories }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-muted">No entries</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          </div>
+        </div>
+        <div class="tab-pane fade" id="exercise" role="tabpanel">
+          <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
+          <table class="table table-sm align-middle">
+            <thead><tr><th>Date</th><th>Activity</th><th>Duration</th><th>Burned</th></tr></thead>
+            <tbody>
+            {% for e in exercise_recent %}
+              <tr>
+                <td>{{ e.date }}</td>
+                <td>{{ e.activity }}</td>
+                <td>{{ e.duration_minutes }} min</td>
+                <td>{{ e.calories_burned|default:"-" }} kcal</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-muted">No entries</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          </div>
+        </div>
+        <div class="tab-pane fade" id="weight" role="tabpanel">
+          <table class="table table-sm align-middle">
+            <thead><tr><th>Date</th><th>Weight (kg)</th></tr></thead>
+            <tbody>
+            {% for e in weight_recent %}
+              <tr><td>{{ e.date }}</td><td>{{ e.weight_kg }}</td></tr>
+            {% empty %}
+              <tr><td colspan="2" class="text-muted">No entries</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Import JSON Modal -->
+<div class="modal fade" id="importJsonModal" tabindex="-1" aria-labelledby="importJsonModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="importJsonModalLabel"><i class="bi bi-upload me-2"></i>Import Activity Data (JSON)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="importJsonForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="jsonData" class="form-label">Paste your JSON data below:</label>
+            <textarea class="form-control font-monospace" id="jsonData" name="json_data" rows="12" placeholder='[
+  {
+    "date": "2025-12-14",
+    "dietary": [
+      {"item": "Breakfast", "calories": 450, "remarks": "Oatmeal with fruits"}
+    ],
+    "exercise": [
+      {"activity": "Running", "duration_minutes": 30, "calories_burned": 300}
+    ]
+  }
+]'></textarea>
+          </div>
+          <div id="importResult" class="alert d-none"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i>Import</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Weight Modal -->
+<div class="modal fade" id="addWeightModal" tabindex="-1" aria-labelledby="addWeightModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addWeightModalLabel"><i class="bi bi-speedometer2 me-2"></i>Log Weight</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="addWeightForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="weightDate" class="form-label">Date</label>
+            <input type="date" class="form-control" id="weightDate" name="date" value="{{ today }}">
+          </div>
+          <div class="mb-3">
+            <label for="weightKg" class="form-label">Weight (kg)</label>
+            <input type="number" step="0.1" class="form-control" id="weightKg" name="weight_kg" placeholder="e.g. 70.5" required>
+          </div>
+          <div class="mb-3">
+            <label for="weightNotes" class="form-label">Notes (optional)</label>
+            <input type="text" class="form-control" id="weightNotes" name="notes" placeholder="Morning weigh-in, after workout, etc.">
+          </div>
+          <div id="weightResult" class="alert d-none"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning"><i class="bi bi-plus-circle me-1"></i>Save Weight</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Daily Recap Modal -->
+<div class="modal fade" id="dailyRecapModal" tabindex="-1" aria-labelledby="dailyRecapModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="dailyRecapModalLabel"><i class="bi bi-calendar-day me-2"></i>Daily Recap - <span id="recapDate"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="recapLoading" class="text-center py-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+        <div id="recapContent" class="d-none">
+          <!-- Summary Cards -->
+          <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+              <div class="card bg-light text-center p-2">
+                <div class="text-muted small">Calories In</div>
+                <div class="fw-bold text-primary" id="recapCalIn">0</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="card bg-light text-center p-2">
+                <div class="text-muted small">Burned</div>
+                <div class="fw-bold text-success" id="recapCalBurned">0</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="card bg-light text-center p-2">
+                <div class="text-muted small">Net</div>
+                <div class="fw-bold" id="recapNetCal">0</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="card bg-light text-center p-2">
+                <div class="text-muted small">Exercise</div>
+                <div class="fw-bold text-info" id="recapExMin">0 min</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Food Section -->
+          <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-egg-fried me-2"></i>Food</h6>
+          <div id="recapFoodList" class="mb-4"></div>
+          
+          <!-- Exercise Section -->
+          <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-lightning-charge me-2"></i>Exercise</h6>
+          <div id="recapExerciseList" class="mb-4"></div>
+          
+          <!-- Weight Section -->
+          <div id="recapWeightSection">
+            <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-speedometer2 me-2"></i>Weight</h6>
+            <div id="recapWeightList"></div>
+          </div>
+        </div>
+        <div id="recapEmpty" class="d-none text-center py-4 text-muted">
+          <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+          No entries for this day.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const calDates = {{ cal_dates|safe }};
+  const calValues = {{ cal_values|safe }};
+  const exDates = {{ ex_dates|safe }};
+  const exValues = {{ ex_values|safe }};
+  const wtDates = {{ wt_dates|safe }};
+  const wtValues = {{ wt_values|safe }};
+  const heatmapData = {{ heatmap_data|safe }};
+  const heatmapStart = '{{ heatmap_start }}';
+  const heatmapEnd = '{{ heatmap_end }}';
+  const todayStr = '{{ today }}';
+
+  const tooltipStyle = { trigger: 'axis', backgroundColor: '#fff', borderColor: '#e5e5e5', textStyle: { color: '#333' } };
+  const gridStyle = { left: '3%', right: '4%', bottom: '3%', containLabel: true };
+
+  // ---------- Activity Heatmap (6 Months: Dec, Jan, Feb, Mar, Apr, May) ----------
+  const heatmapChart = echarts.init(document.getElementById('heatmapChart'));
+
+  // Build activity count map
+  const activityMap = {};
+  heatmapData.forEach(function(item) { activityMap[item[0]] = item[1]; });
+
+  // Detect mobile
+  const isMobile = window.innerWidth < 576;
+  
+  // For mobile: show only current month. For desktop: show 6 months
+  let rangeStart, rangeEnd;
+  if (isMobile) {
+    // Current month only
+    const today = new Date(todayStr);
+    rangeStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+    rangeEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+  } else {
+    rangeStart = heatmapStart;
+    rangeEnd = heatmapEnd;
+  }
+
+  // Generate all days in the range
+  const startDate = new Date(rangeStart);
+  const endDate = new Date(rangeEnd);
+  
+  const fullRangeData = [];
+  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    const dateStr = d.toISOString().split('T')[0];
+    const count = activityMap[dateStr] || 0;
+    fullRangeData.push([dateStr, count]);
+  }
+
+  // Custom color function: white for 0, green shades for activity, yellow border for today
+  heatmapChart.setOption({
+    tooltip: {
+      trigger: 'item',
+      formatter: function(p) {
+        if (!p.value) return '';
+        const date = p.value[0];
+        const count = p.value[1];
+        const isToday = date === todayStr ? ' (Today)' : '';
+        return date + isToday + '<br>Activities: ' + count;
+      }
+    },
+    visualMap: {
+      show: !isMobile,
+      min: 0,
+      max: 5,
+      calculable: false,
+      orient: 'horizontal',
+      right: 30,
+      bottom: 5,
+      itemWidth: 12,
+      itemHeight: 12,
+      inRange: { color: ['#f5f5f5', '#9be9a8', '#40c463', '#30a14e', '#216e39'] },
+      text: ['More', 'Less'],
+      textStyle: { color: '#666', fontSize: 10 }
+    },
+    calendar: {
+      top: isMobile ? 20 : 30,
+      bottom: isMobile ? 10 : 40,
+      left: isMobile ? 30 : 50,
+      right: isMobile ? 10 : 30,
+      cellSize: isMobile ? ['auto', 20] : 'auto',
+      range: [rangeStart, rangeEnd],
+      itemStyle: { borderWidth: 2, borderColor: '#fff', borderRadius: 2 },
+      splitLine: { show: false },
+      yearLabel: { show: false },
+      monthLabel: { show: !isMobile, nameMap: 'en', color: '#666', fontSize: 11 },
+      dayLabel: { firstDay: 0, nameMap: ['S','M','T','W','T','F','S'], color: '#999', fontSize: isMobile ? 9 : 10 }
+    },
+    series: [
+      {
+        type: 'heatmap',
+        coordinateSystem: 'calendar',
+        data: fullRangeData
+      },
+      // Today highlight (yellow border)
+      {
+        type: 'scatter',
+        coordinateSystem: 'calendar',
+        symbolSize: isMobile ? 16 : 12,
+        symbol: 'roundRect',
+        data: [[todayStr, activityMap[todayStr] || 0]],
+        itemStyle: {
+          color: 'transparent',
+          borderColor: '#fbbf24',
+          borderWidth: 2
+        },
+        zlevel: 1
+      }
+    ]
+  });
+
+  // Heatmap click handler - show daily recap
+  heatmapChart.on('click', function(params) {
+    if (params.value && params.value[0]) {
+      showDailyRecap(params.value[0]);
+    }
+  });
+
+  // Calories line chart
+  const calChart = echarts.init(document.getElementById('calChart'));
+  if (calValues.length === 0 || calValues.every(v => v === 0)) {
+    document.getElementById('calChartEmpty').classList.remove('d-none');
+  } else {
+    calChart.setOption({
+      tooltip: tooltipStyle,
+      grid: gridStyle,
+      xAxis: { type: 'category', data: calDates, axisLine: { lineStyle: { color: '#ddd' } }, axisLabel: { color: '#666' } },
+      yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f0f0f0' } }, axisLabel: { color: '#666' } },
+      series: [{ data: calValues, type: 'line', smooth: true, lineStyle: { width: 3, color: '#6366f1' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(99,102,241,0.35)' }, { offset: 1, color: 'rgba(99,102,241,0.05)' }]) }, symbol: 'circle', symbolSize: 8, itemStyle: { color: '#6366f1' } }]
+    });
+  }
+
+  // Exercise bar chart
+  const exChart = echarts.init(document.getElementById('exChart'));
+  if (exValues.length === 0 || exValues.every(v => v === 0)) {
+    document.getElementById('exChartEmpty').classList.remove('d-none');
+  } else {
+    exChart.setOption({
+      tooltip: tooltipStyle,
+      grid: gridStyle,
+      xAxis: { type: 'category', data: exDates, axisLine: { lineStyle: { color: '#ddd' } }, axisLabel: { color: '#666' } },
+      yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f0f0f0' } }, axisLabel: { color: '#666' } },
+      series: [{ data: exValues, type: 'bar', barWidth: '50%', itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#34d399' }, { offset: 1, color: '#10b981' }]), borderRadius: [6, 6, 0, 0] } }]
+    });
+  }
+
+  // Weight line chart
+  const wtChart = echarts.init(document.getElementById('wtChart'));
+  if (wtValues.length === 0) {
+    document.getElementById('wtChartEmpty').classList.remove('d-none');
+  } else {
+    wtChart.setOption({
+      tooltip: tooltipStyle,
+      grid: gridStyle,
+      xAxis: { type: 'category', data: wtDates, axisLine: { lineStyle: { color: '#ddd' } }, axisLabel: { color: '#666' } },
+      yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f0f0f0' } }, axisLabel: { color: '#666' }, scale: true },
+      series: [{ data: wtValues, type: 'line', smooth: true, lineStyle: { width: 3, color: '#f59e0b' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(245,158,11,0.35)' }, { offset: 1, color: 'rgba(245,158,11,0.05)' }]) }, symbol: 'circle', symbolSize: 8, itemStyle: { color: '#f59e0b' } }]
+    });
+  }
+
+  window.addEventListener('resize', function() { heatmapChart.resize(); calChart.resize(); exChart.resize(); wtChart.resize(); });
+
+  // ---------- Import JSON Form ----------
+  document.getElementById('importJsonForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const resultDiv = document.getElementById('importResult');
+    
+    fetch('{% url "tracker:import_json" %}', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      resultDiv.classList.remove('d-none', 'alert-success', 'alert-danger');
+      if (data.success) {
+        resultDiv.classList.add('alert-success');
+        resultDiv.textContent = data.message;
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        resultDiv.classList.add('alert-danger');
+        resultDiv.textContent = 'Error: ' + data.error;
+      }
+    })
+    .catch(err => {
+      resultDiv.classList.remove('d-none', 'alert-success');
+      resultDiv.classList.add('alert-danger');
+      resultDiv.textContent = 'Request failed: ' + err;
+    });
+  });
+
+  // ---------- Add Weight Form ----------
+  document.getElementById('addWeightForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const resultDiv = document.getElementById('weightResult');
+    
+    fetch('{% url "tracker:add_weight" %}', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      resultDiv.classList.remove('d-none', 'alert-success', 'alert-danger');
+      if (data.success) {
+        resultDiv.classList.add('alert-success');
+        resultDiv.textContent = data.message;
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        resultDiv.classList.add('alert-danger');
+        resultDiv.textContent = 'Error: ' + data.error;
+      }
+    })
+    .catch(err => {
+      resultDiv.classList.remove('d-none', 'alert-success');
+      resultDiv.classList.add('alert-danger');
+      resultDiv.textContent = 'Request failed: ' + err;
+    });
+  });
+
+  // ---------- Daily Recap Modal ----------
+  function showDailyRecap(dateStr) {
+    const modal = new bootstrap.Modal(document.getElementById('dailyRecapModal'));
+    const recapDate = document.getElementById('recapDate');
+    const recapLoading = document.getElementById('recapLoading');
+    const recapContent = document.getElementById('recapContent');
+    const recapEmpty = document.getElementById('recapEmpty');
+    
+    // Format date nicely
+    const dateObj = new Date(dateStr);
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    recapDate.textContent = dateObj.toLocaleDateString('en-US', options);
+    
+    // Show loading, hide content
+    recapLoading.classList.remove('d-none');
+    recapContent.classList.add('d-none');
+    recapEmpty.classList.add('d-none');
+    
+    modal.show();
+    
+    // Fetch daily data
+    fetch('/tracker/daily-recap/' + dateStr + '/')
+      .then(response => response.json())
+      .then(data => {
+        recapLoading.classList.add('d-none');
+        
+        if (!data.success) {
+          recapEmpty.textContent = 'Error: ' + data.error;
+          recapEmpty.classList.remove('d-none');
+          return;
+        }
+        
+        const hasData = data.dietary.length > 0 || data.exercise.length > 0 || data.weight.length > 0;
+        
+        if (!hasData) {
+          recapEmpty.classList.remove('d-none');
+          return;
+        }
+        
+        // Populate summary
+        document.getElementById('recapCalIn').textContent = data.summary.total_calories_in + ' kcal';
+        document.getElementById('recapCalBurned').textContent = data.summary.total_calories_burned + ' kcal';
+        document.getElementById('recapExMin').textContent = data.summary.total_exercise_min + ' min';
+        
+        const netCal = document.getElementById('recapNetCal');
+        netCal.textContent = data.summary.net_calories + ' kcal';
+        netCal.className = 'fw-bold ' + (data.summary.net_calories > 2000 ? 'text-danger' : 'text-success');
+        
+        // Populate food list
+        const foodList = document.getElementById('recapFoodList');
+        if (data.dietary.length > 0) {
+          foodList.innerHTML = data.dietary.map(item => `
+            <div class="d-flex justify-content-between align-items-start mb-2 p-2 bg-light rounded">
+              <div>
+                <strong>${item.item || 'Food item'}</strong>
+                ${item.notes ? '<br><small class="text-muted">' + item.notes + '</small>' : ''}
+                ${item.remarks ? '<br><small class="text-info"><i class="bi bi-chat-quote me-1"></i>' + item.remarks + '</small>' : ''}
+              </div>
+              <span class="badge bg-primary">${item.calories || 0} kcal</span>
+            </div>
+          `).join('');
+        } else {
+          foodList.innerHTML = '<p class="text-muted">No food entries</p>';
+        }
+        
+        // Populate exercise list
+        const exerciseList = document.getElementById('recapExerciseList');
+        if (data.exercise.length > 0) {
+          exerciseList.innerHTML = data.exercise.map(item => `
+            <div class="d-flex justify-content-between align-items-start mb-2 p-2 bg-light rounded">
+              <div>
+                <strong>${item.activity || 'Exercise'}</strong>
+                <br><small class="text-muted">${item.duration_minutes || 0} minutes</small>
+                ${item.remarks ? '<br><small class="text-info"><i class="bi bi-chat-quote me-1"></i>' + item.remarks + '</small>' : ''}
+              </div>
+              <span class="badge bg-success">-${item.calories_burned || 0} kcal</span>
+            </div>
+          `).join('');
+        } else {
+          exerciseList.innerHTML = '<p class="text-muted">No exercise entries</p>';
+        }
+        
+        // Populate weight list
+        const weightSection = document.getElementById('recapWeightSection');
+        const weightList = document.getElementById('recapWeightList');
+        if (data.weight.length > 0) {
+          weightSection.classList.remove('d-none');
+          weightList.innerHTML = data.weight.map(item => `
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+              <span><i class="bi bi-speedometer2 me-2"></i>${item.weight_kg} kg</span>
+              ${item.notes ? '<small class="text-muted">' + item.notes + '</small>' : ''}
+            </div>
+          `).join('');
+        } else {
+          weightSection.classList.add('d-none');
+        }
+        
+        recapContent.classList.remove('d-none');
+      })
+      .catch(err => {
+        recapLoading.classList.add('d-none');
+        recapEmpty.innerHTML = '<i class="bi bi-exclamation-triangle fs-1 d-block mb-2"></i>Failed to load data.';
+        recapEmpty.classList.remove('d-none');
+      });
+  }
+});
+</script>
+{% endblock %}

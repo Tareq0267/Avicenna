@@ -1,0 +1,304 @@
+/* ===== Modern White Dashboard Styles ===== */
+
+:root {
+  --bg: #f8f9fb;
+  --card-bg: #ffffff;
+  --border: #e9ecef;
+  --text: #1f2937;
+  --text-muted: #6b7280;
+  --primary: #6366f1;
+  --success: #10b981;
+  --warning: #f59e0b;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Navbar */
+.navbar {
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+}
+.navbar-brand {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--primary) !important;
+}
+.nav-link {
+  color: var(--text-muted) !important;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+.nav-link:hover {
+  color: var(--primary) !important;
+}
+
+/* Stat Cards */
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  height: 100%;
+}
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: #fff;
+}
+.cal-icon { background: linear-gradient(135deg, #6366f1, #818cf8); }
+.ex-icon  { background: linear-gradient(135deg, #10b981, #34d399); }
+.wt-icon  { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.stat-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stat-value small {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* Chart Cards */
+.chart-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  height: 100%;
+}
+.chart-title {
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.chart-container {
+  width: 100%;
+  height: 220px;
+}
+
+/* Heatmap Container - responsive */
+.heatmap-container {
+  width: 100%;
+  height: 220px;
+}
+
+/* Chart Empty State */
+.chart-empty-state {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  background: var(--card-bg);
+  z-index: 10;
+}
+.chart-empty-state i {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.4;
+}
+.chart-empty-state p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Brand icon */
+.brand-icon {
+  margin-right: 0.5rem;
+  font-size: 1.3rem;
+}
+
+/* Tabs & Tables */
+.nav-tabs {
+  border-bottom: 1px solid var(--border);
+}
+.nav-tabs .nav-link {
+  border: none;
+  color: var(--text-muted);
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+}
+.nav-tabs .nav-link.active {
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
+  background: none;
+}
+.table {
+  --bs-table-bg: transparent;
+}
+.table thead th {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom-width: 1px;
+}
+.table td {
+  vertical-align: middle;
+  font-size: 0.85rem;
+}
+
+/* ===== Mobile Responsive ===== */
+@media (max-width: 576px) {
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  
+  .navbar {
+    padding: 0.4rem 0.5rem;
+  }
+  
+  .navbar-brand {
+    font-size: 1rem;
+  }
+  
+  .brand-icon {
+    font-size: 1rem;
+    margin-right: 0.25rem;
+  }
+  
+  .navbar .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .navbar-toggler {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.9rem;
+  }
+  
+  .chart-card {
+    padding: 0.875rem;
+  }
+  
+  .stat-card {
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+  
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    font-size: 1rem;
+  }
+  
+  .stat-value {
+    font-size: 1.1rem;
+  }
+  
+  .stat-label {
+    font-size: 0.65rem;
+  }
+  
+  .chart-title {
+    font-size: 0.85rem;
+  }
+  
+  .heatmap-container {
+    height: 160px;
+  }
+  
+  .chart-container {
+    height: 180px;
+  }
+  
+  .btn-sm {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8rem;
+  }
+  
+  /* Modal adjustments */
+  .modal-dialog {
+    margin: 0.5rem;
+  }
+  
+  .modal-body {
+    padding: 1rem;
+  }
+}
+@media (min-width: 577px) and (max-width: 768px) {
+  .stat-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+  }
+  
+  .stat-value {
+    font-size: 1.15rem;
+  }
+}
+
+/* Large screens */
+@media (min-width: 992px) {
+  .stat-card {
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .stat-icon {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    font-size: 1.5rem;
+  }
+  
+  .stat-value {
+    font-size: 1.5rem;
+  }
+  
+  .chart-card {
+    padding: 1.25rem 1.5rem;
+  }
+}
+
+/* Table tweaks for mobile */
+.table-responsive {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Truncate long text in tables on mobile */
+@media (max-width: 576px) {
+  .table td {
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
