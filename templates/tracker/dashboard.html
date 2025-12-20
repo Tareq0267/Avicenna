@@ -207,6 +207,15 @@
             <div id="recapWeightList"></div>
           </div>
         </div>
+        <!-- Remarks Section -->
+        <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-chat-quote me-2"></i>Remarks</h6>
+        <div id="recapRemarksSection" class="mb-4">
+          <div id="recapRemarksContent" class="d-none">
+            <div class="alert alert-info p-2 mb-0" id="recapRemarksText"></div>
+          </div>
+          <div id="recapRemarksEmpty" class="text-muted">No remarks for this day.</div>
+        </div>
+         
         <div id="recapEmpty" class="d-none text-center py-4 text-muted">
           <i class="bi bi-inbox fs-1 d-block mb-2"></i>
           No entries for this day.
@@ -439,7 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div>
                 <strong>${item.item || 'Food item'}</strong>
                 ${item.notes ? '<br><small class="text-muted">' + item.notes + '</small>' : ''}
-                ${item.remarks ? '<br><small class="text-info"><i class="bi bi-chat-quote me-1"></i>' + item.remarks + '</small>' : ''}
+                {% comment %} ${item.remarks ? '<br><small class="text-info"><i class="bi bi-chat-quote me-1"></i>' + item.remarks + '</small>' : ''} {% endcomment %}
               </div>
               <span class="badge bg-primary">${item.calories || 0} kcal</span>
             </div>
@@ -456,7 +465,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div>
                 <strong>${item.activity || 'Exercise'}</strong>
                 <br><small class="text-muted">${item.duration_minutes || 0} minutes</small>
-                ${item.remarks ? '<br><small class="text-info"><i class="bi bi-chat-quote me-1"></i>' + item.remarks + '</small>' : ''}
+                 {% comment %} ${item.remarks ? '<br><small class="text-info"><i class="bi bi-chat-quote me-1"></i>' + item.remarks + '</small>' : ''} {% endcomment %}
               </div>
               <span class="badge bg-success">-${item.calories_burned || 0} kcal</span>
             </div>
@@ -480,6 +489,27 @@ document.addEventListener('DOMContentLoaded', function() {
           weightSection.classList.add('d-none');
         }
         
+        // Remarks Section
+        const remarksSection = document.getElementById('recapRemarksSection');
+        const remarksContent = document.getElementById('recapRemarksContent');
+        const remarksText = document.getElementById('recapRemarksText');
+        const remarksEmpty = document.getElementById('recapRemarksEmpty');
+        let remarks = (data.remarks && data.remarks.trim() !== "") ? data.remarks : "";
+        if (!remarks) {
+          if (data.dietary && data.dietary.length > 0 && data.dietary[0].remarks) {
+            remarks = data.dietary[0].remarks;
+          } else if (data.exercise && data.exercise.length > 0 && data.exercise[0].remarks) {
+            remarks = data.exercise[0].remarks;
+          }
+        }
+        if (remarks && remarks.trim() !== "") {
+          remarksText.textContent = remarks;
+          remarksContent.classList.remove('d-none');
+          remarksEmpty.classList.add('d-none');
+        } else {
+          remarksContent.classList.add('d-none');
+          remarksEmpty.classList.remove('d-none');
+        }
         recapContent.classList.remove('d-none');
       })
       .catch(err => {

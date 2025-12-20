@@ -144,7 +144,7 @@ def import_json(request):
                     item=item.get('item', ''),
                     calories=item.get('calories', 0),
                     notes=item.get('notes') or item.get('note', ''),  # support both 'notes' and 'note'
-                    remarks=item.get('remarks') or day_remarks  # use item remarks or day remarks
+                    # remarks=item.get('remarks') or day_remarks  # use item remarks or day remarks
                 )
                 dietary_count += 1
             
@@ -157,7 +157,7 @@ def import_json(request):
                     activity=ex.get('activity', ''),
                     duration_minutes=ex.get('duration_minutes') or ex.get('duration_min', 0),  # support both
                     calories_burned=ex.get('calories_burned', 0),
-                    remarks=ex.get('remarks') or day_remarks  # use exercise remarks or day remarks
+                    # remarks=ex.get('remarks') or day_remarks  # use exercise remarks or day remarks
                 )
                 exercise_count += 1
         
@@ -224,12 +224,20 @@ def daily_recap(request, date_str):
         for w in weight:
             w['weight_kg'] = float(w['weight_kg'])
         
+        # Find a remarks string to use at the top level (first non-empty from dietary or exercise)
+        remarks = ""
+        if dietary and dietary[0].get('remarks'):
+            remarks = dietary[0]['remarks']
+        elif exercise and exercise[0].get('remarks'):
+            remarks = exercise[0]['remarks']
+
         return JsonResponse({
             'success': True,
             'date': date_str,
             'dietary': dietary,
             'exercise': exercise,
             'weight': weight,
+            'remarks': remarks,
             'summary': {
                 'total_calories_in': total_calories_in,
                 'total_calories_burned': total_calories_burned,
