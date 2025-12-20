@@ -249,9 +249,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // ---------- Activity Heatmap (6 Months: Dec, Jan, Feb, Mar, Apr, May) ----------
   const heatmapChart = echarts.init(document.getElementById('heatmapChart'));
 
-  // Build activity count map
+  // Build exercise count map (use exDates and exValues)
   const activityMap = {};
-  heatmapData.forEach(function(item) { activityMap[item[0]] = item[1]; });
+  exDates.forEach(function(date, idx) { activityMap[date] = exValues[idx] || 0; });
 
   // Detect mobile
   const isMobile = window.innerWidth < 576;
@@ -268,10 +268,9 @@ document.addEventListener('DOMContentLoaded', function() {
     rangeEnd = heatmapEnd;
   }
 
-  // Generate all days in the range
+  // Generate all days in the range (exercise only)
   const startDate = new Date(rangeStart);
   const endDate = new Date(rangeEnd);
-  
   const fullRangeData = [];
   for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
     const dateStr = d.toISOString().split('T')[0];
@@ -322,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
       {
         type: 'heatmap',
         coordinateSystem: 'calendar',
-        data: fullRangeData
+        data: fullRangeData // now only exercise data
       },
       // Today highlight (yellow border)
       {
@@ -330,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
         coordinateSystem: 'calendar',
         symbolSize: isMobile ? 16 : 12,
         symbol: 'roundRect',
-        data: [[todayStr, activityMap[todayStr] || 0]],
+        data: [[todayStr, activityMap[todayStr] || 0]], // exercise only
         itemStyle: {
           color: 'transparent',
           borderColor: '#fbbf24',
