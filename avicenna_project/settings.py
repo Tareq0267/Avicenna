@@ -3,9 +3,12 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-replace-this-with-a-secret'
+SECRET_KEY = '1fa4679c4d70e81129ec08de6b396c2516c37884ef25c49954d82ca153afa8d4_e3fd33749094a54541281d82d5a73dd8'
 
 DEBUG = True
+
+TIME_ZONE = "Asia/Kuala_Lumpur"
+USE_TZ = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost','cybilcut.pythonanywhere.com']
 
