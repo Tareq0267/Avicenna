@@ -33,7 +33,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
 ROOT_URLCONF = 'avicenna_project.urls'
+
+# Redirects after login/logout
+LOGIN_REDIRECT_URL = '/tracker/dashboard/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 TEMPLATES = [
     {
