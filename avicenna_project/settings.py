@@ -1,9 +1,12 @@
 import os
+from dotenv import load_dotenv
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = '1fa4679c4d70e81129ec08de6b396c2516c37884ef25c49954d82ca153afa8d4_e3fd33749094a54541281d82d5a73dd8'
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
+
+SECRET_KEY = os.environ.get('SECRET_KEY', 'insecure-default-key')
 
 DEBUG = True
 
@@ -65,7 +68,21 @@ DATABASES = {
     }
 }
 
-AUTH_PASSWORD_VALIDATORS = []
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 8},
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
 
 LANGUAGE_CODE = 'en-us'
 
