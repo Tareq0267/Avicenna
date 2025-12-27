@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center bg-light" style="min-height: 80vh;">
+  <div class="card border-0 shadow rounded-4 p-4" style="width: 100%; max-width: 370px;">
+    <div class="text-center mb-4">
+      {% comment %} <i class="bi bi-box-arrow-in-right" style="font-size: 2.5rem;"></i> {% endcomment %}
+      <h2 class="fw-bold mt-2 mb-1">Log In</h2>
+      <p class="text-secondary mb-0">Access your Avicenna account</p>
+    </div>
+    <form method="post" autocomplete="off">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label for="id_username" class="form-label">Username</label>
+        <input type="text" name="username" autofocus required maxlength="150" class="form-control form-control-lg" id="id_username" placeholder="Enter your username">
+      </div>
+      <div class="mb-3">
+        <label for="id_password" class="form-label">Password</label>
+        <input type="password" name="password" required class="form-control form-control-lg" id="id_password" placeholder="Enter your password">
+      </div>
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger py-2">{{ form.non_field_errors|striptags }}</div>
+      {% endif %}
+      <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm">Login</button>
+    </form>
+  </div>
+</div>
+<style>
+  body { background: #f8fafc; }
+</style>
+{% endblock %}
