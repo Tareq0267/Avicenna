@@ -8,6 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/tracker/css/style.css">
+    <link rel="manifest" href="/static/manifest.json">
   </head>
   <body>
     <nav class="navbar navbar-expand-lg">
@@ -121,6 +122,18 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/static/sw.js')
+          .then(function(registration) {
+            // Registration successful
+          }, function(err) {
+            // Registration failed
+            console.warn('ServiceWorker registration failed:', err);
+          });
+      });
+    }
     // Import JSON Form Handler
     document.getElementById('importJsonForm').addEventListener('submit', function(e) {
       e.preventDefault();
