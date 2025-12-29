@@ -130,40 +130,100 @@ def import_json(request):
         raw_json = request.POST.get('json_data', '').strip()
         if not raw_json:
             return JsonResponse({'success': False, 'error': 'No JSON data provided'})
+
         data = json.loads(raw_json)
+        if not isinstance(data, list):
+            return JsonResponse({'success': False, 'error': 'JSON must be a list/array of day objects'})
+
         user = request.user
         dietary_count = 0
         exercise_count = 0
+        skipped_days = 0
+
         for entry in data:
+            if not isinstance(entry, dict):
+                skipped_days += 1
+                continue
+
             date_str = entry.get('date')
             if not date_str:
+                skipped_days += 1
                 continue
-            entry_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-            day_remarks = entry.get('remarks', '')
+
+            try:
+                entry_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            except ValueError:
+                skipped_days += 1
+                continue
+
+            # Day-level remarks (applies to all items for that date)
+            day_remarks = (entry.get('remarks') or "").strip()
+
+            # Dietary list can be "dietary" OR "food"
             food_items = entry.get('dietary') or entry.get('food') or []
+            if not isinstance(food_items, list):
+                food_items = []
+
             for item in food_items:
-                DietaryEntry.objects.create(
-                    user=user,
-                    date=entry_date,
-                    item=item.get('item', ''),
-                    calories=item.get('calories', 0),
-                    notes=item.get('notes') or item.get('note', ''),
-                )
+                if not isinstance(item, dict):
+                    continue
+
+                # Some JSONs may put notes/note/remarks per item; fall back to day remarks
+                item_notes = (item.get('notes') or item.get('note') or "").strip()
+                item_remarks = (item.get('remarks') or "").strip() or day_remarks
+
+                create_kwargs = {
+                    "user": user,
+                    "date": entry_date,
+                    "item": item.get("item", "") or "",
+                    "calories": item.get("calories", 0) or 0,
+                    "notes": item_notes,
+                }
+
+                # Only set remarks if the model actually has that field
+                if hasattr(DietaryEntry, "remarks"):
+                    create_kwargs["remarks"] = item_remarks
+
+                DietaryEntry.objects.create(**create_kwargs)
                 dietary_count += 1
+
+            # Exercise list
             exercise_items = entry.get('exercise') or []
+            if not isinstance(exercise_items, list):
+                exercise_items = []
+
             for ex in exercise_items:
+                if not isinstance(ex, dict):
+                    continue
+
+                # Accept both duration_minutes (your model) and duration_min (your sample JSON)
+                duration = ex.get('duration_minutes', None)
+                if duration is None:
+                    duration = ex.get('duration_min', 0)
+
+                ex_remarks = (ex.get('remarks') or "").strip() or day_remarks
+
                 ExerciseEntry.objects.create(
                     user=user,
                     date=entry_date,
-                    activity=ex.get('activity', ''),
-                    duration_minutes=ex.get('duration_minutes', 0),
-                    calories_burned=ex.get('calories_burned', 0),
-                    remarks=ex.get('remarks', '')
+                    activity=ex.get('activity', '') or '',
+                    duration_minutes=duration or 0,
+                    calories_burned=ex.get('calories_burned', 0) or 0,
+                    remarks=ex_remarks
                 )
                 exercise_count += 1
-        return JsonResponse({'success': True, 'message': f'Imported {dietary_count} dietary and {exercise_count} exercise entries.'})
+
+        msg = f'Imported {dietary_count} dietary and {exercise_count} exercise entries.'
+        if skipped_days:
+            msg += f' Skipped {skipped_days} invalid day record(s).'
+
+        return JsonResponse({'success': True, 'message': msg})
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON (could not parse).'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
 
 
 @require_POST
