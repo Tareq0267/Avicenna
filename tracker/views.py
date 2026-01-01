@@ -27,9 +27,10 @@ def dashboard(request):
     today = timezone.now().date()
 
     # Find the most recent entry date to base charts on actual data
-    latest_dietary = DietaryEntry.objects.aggregate(m=Max('date'))['m']
-    latest_exercise = ExerciseEntry.objects.aggregate(m=Max('date'))['m']
-    latest_dates = [d for d in [latest_dietary, latest_exercise] if d]
+    latest_dietary = DietaryEntry.objects.filter(user=request.user).aggregate(m=Max('date'))['m']
+    latest_exercise = ExerciseEntry.objects.filter(user=request.user).aggregate(m=Max('date'))['m']
+    latest_weight = WeightEntry.objects.filter(user=request.user).aggregate(m=Max('date'))['m']
+    latest_dates = [d for d in [latest_dietary, latest_exercise, latest_weight, today] if d]
     
     if latest_dates:
         chart_end = max(latest_dates)
@@ -64,10 +65,14 @@ def dashboard(request):
     ex_dates = [str(r['date']) for r in ex_qs]
     ex_values = [r['total'] or 0 for r in ex_qs]
 
-    # Weight trend (line chart) - show all available data
+    # Weight trend (line chart) - show all weight data in range
     wt_qs = WeightEntry.objects.filter(user=request.user, date__gte=chart_start, date__lte=chart_end).order_by('date')
     wt_dates = [str(w.date) for w in wt_qs]
     wt_values = [float(w.weight_kg) for w in wt_qs]
+    
+    # Get latest weight (regardless of date range)
+    latest_weight_entry = WeightEntry.objects.filter(user=request.user).order_by('-date').first()
+    latest_weight_value = float(latest_weight_entry.weight_kg) if latest_weight_entry else None
 
     # --- Heatmap: activity count per day (12 months back for navigation) ---
     from dateutil.relativedelta import relativedelta
@@ -91,7 +96,6 @@ def dashboard(request):
     # Summary stats
     total_calories = sum(cal_values)
     total_exercise_min = sum(ex_values)
-    latest_weight = wt_values[-1] if wt_values else None
 
     context = {
         'dietary_recent': dietary_recent,
@@ -115,7 +119,7 @@ def dashboard(request):
         # summary
         'total_calories': total_calories,
         'total_exercise_min': total_exercise_min,
-        'latest_weight': latest_weight,
+        'latest_weight': latest_weight_value,
     }
     return render(request, 'tracker/dashboard.html', context)
 
