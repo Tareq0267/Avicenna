@@ -33,10 +33,10 @@ def dashboard(request):
     
     if latest_dates:
         chart_end = max(latest_dates)
-        chart_start = chart_end - timedelta(days=6)  # 7 days of data
+        chart_start = chart_end - timedelta(days=29)  # 30 days of data for scrollable charts
     else:
         chart_end = today
-        chart_start = today - timedelta(days=6)
+        chart_start = today - timedelta(days=29)
 
     # --- recent entries for tables (user-specific) ---
     dietary_recent = DietaryEntry.objects.filter(user=request.user).order_by('-date', '-id')[:25]
@@ -69,13 +69,11 @@ def dashboard(request):
     wt_dates = [str(w.date) for w in wt_qs]
     wt_values = [float(w.weight_kg) for w in wt_qs]
 
-    # --- Heatmap: activity count per day (6 months starting with current month) ---
-    # December, January, February, March, April, May (current month first, then 5 forward)
+    # --- Heatmap: activity count per day (12 months back for navigation) ---
     from dateutil.relativedelta import relativedelta
-    heatmap_start = today.replace(day=1)  # First day of current month (December)
-    # End at last day of 5 months ahead
-    heatmap_end_month = heatmap_start + relativedelta(months=5)  # May
-    heatmap_end = (heatmap_end_month + relativedelta(months=1)).replace(day=1) - timedelta(days=1)
+    heatmap_start = (today - relativedelta(months=11)).replace(day=1)  # 12 months of data
+    # End at last day of current month
+    heatmap_end = (today + relativedelta(months=1)).replace(day=1) - timedelta(days=1)
 
     activity_counts = defaultdict(int)
     # count dietary entries

@@ -110,7 +110,48 @@ body {
 /* Heatmap Container - responsive */
 .heatmap-container {
   width: 100%;
-  height: 220px;
+  height: 180px;
+}
+
+/* Heatmap Navigation - Carousel Style */
+.heatmap-wrapper {
+  gap: 0;
+  position: relative;
+}
+
+.heatmap-nav-btn {
+  padding: 0;
+  width: 24px;
+  min-width: 24px;
+  height: 180px;
+  border-radius: 0;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #6b7280);
+  font-size: 0.85rem;
+}
+
+.heatmap-nav-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary, #6366f1);
+}
+
+.heatmap-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+#heatmapPrev {
+  border-right: 1px solid var(--border, #e9ecef);
+}
+
+#heatmapNext {
+  border-left: 1px solid var(--border, #e9ecef);
 }
 
 /* Chart Empty State */

@@ -7,7 +7,18 @@
   <div class="col-12">
     <div class="chart-card">
       <h6 class="chart-title mb-2"><i class="bi bi-calendar3 me-2"></i>Activity Heatmap</h6>
-      <div id="heatmapChart" class="heatmap-container"></div>
+      <div class="heatmap-wrapper d-flex align-items-center">
+        <button type="button" class="btn btn-sm btn-outline-secondary heatmap-nav-btn" id="heatmapPrev" title="Previous months">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <div id="heatmapChart" class="heatmap-container flex-grow-1"></div>
+        <button type="button" class="btn btn-sm btn-outline-secondary heatmap-nav-btn" id="heatmapNext" title="Next months">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+      <div class="text-center mt-2">
+        <span class="text-muted small" id="heatmapRange"></span>
+      </div>
     </div>
   </div>
 </div>
@@ -246,107 +257,155 @@ document.addEventListener('DOMContentLoaded', function() {
   const tooltipStyle = { trigger: 'axis', backgroundColor: '#fff', borderColor: '#e5e5e5', textStyle: { color: '#333' } };
   const gridStyle = { left: '3%', right: '4%', bottom: '3%', containLabel: true };
 
-  // ---------- Activity Heatmap (6 Months: Dec, Jan, Feb, Mar, Apr, May) ----------
+  // Detect mobile
+  const isMobile = window.innerWidth < 576;
+
+  // ---------- Activity Heatmap with Month Navigation ----------
   const heatmapChart = echarts.init(document.getElementById('heatmapChart'));
 
   // Build activity count map
   const activityMap = {};
   heatmapData.forEach(function(item) { activityMap[item[0]] = item[1]; });
 
-  // Detect mobile
-  const isMobile = window.innerWidth < 576;
+  // Heatmap navigation state
+  let heatmapOffset = 0; // 0 = current period, negative = past months
+  const monthsToShow = isMobile ? 1 : 6;
   
-  // For mobile: show only current month. For desktop: show 6 months
-  let rangeStart, rangeEnd;
-  if (isMobile) {
-    // Current month only
+  function getMonthName(date) {
+    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  }
+  
+  function updateHeatmapRange() {
     const today = new Date(todayStr);
-    rangeStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-    rangeEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
-  } else {
-    rangeStart = heatmapStart;
-    rangeEnd = heatmapEnd;
-  }
-
-  // Generate all days in the range
-  const startDate = new Date(rangeStart);
-  const endDate = new Date(rangeEnd);
-  
-  const fullRangeData = [];
-  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-    const dateStr = d.toISOString().split('T')[0];
-    const count = activityMap[dateStr] || 0;
-    fullRangeData.push([dateStr, count]);
-  }
-
-  // Custom color function: white for 0, green shades for activity, yellow border for today
-  heatmapChart.setOption({
-    tooltip: {
-      trigger: 'item',
-      formatter: function(p) {
-        if (!p.value) return '';
-        const date = p.value[0];
-        const count = p.value[1];
-        const isToday = date === todayStr ? ' (Today)' : '';
-        return date + isToday + '<br>Activities: ' + count;
-      }
-    },
-    visualMap: {
-      show: !isMobile,
-      min: 0,
-      max: 5,
-      calculable: false,
-      orient: 'horizontal',
-      right: 30,
-      bottom: 5,
-      itemWidth: 12,
-      itemHeight: 12,
-      inRange: { color: ['#f5f5f5', '#9be9a8', '#40c463', '#30a14e', '#216e39'] },
-      text: ['More', 'Less'],
-      textStyle: { color: '#666', fontSize: 10 }
-    },
-    calendar: {
-      top: isMobile ? 20 : 30,
-      bottom: isMobile ? 10 : 40,
-      left: isMobile ? 30 : 50,
-      right: isMobile ? 10 : 30,
-      cellSize: isMobile ? ['auto', 20] : 'auto',
-      range: [rangeStart, rangeEnd],
-      itemStyle: { borderWidth: 2, borderColor: '#fff', borderRadius: 2 },
-      splitLine: { show: false },
-      yearLabel: { show: false },
-      monthLabel: { show: !isMobile, nameMap: 'en', color: '#666', fontSize: 11 },
-      dayLabel: { firstDay: 0, nameMap: ['S','M','T','W','T','F','S'], color: '#999', fontSize: isMobile ? 9 : 10 }
-    },
-    series: [
-      {
-        type: 'heatmap',
-        coordinateSystem: 'calendar',
-        data: fullRangeData
+    
+    // Calculate start date based on offset
+    const startMonth = new Date(today.getFullYear(), today.getMonth() + heatmapOffset, 1);
+    const endMonth = new Date(startMonth.getFullYear(), startMonth.getMonth() + monthsToShow - 1, 1);
+    const endDate = new Date(endMonth.getFullYear(), endMonth.getMonth() + 1, 0); // Last day of end month
+    
+    const rangeStartStr = startMonth.toISOString().split('T')[0];
+    const rangeEndStr = endDate.toISOString().split('T')[0];
+    
+    // Update range label
+    const rangeLabel = document.getElementById('heatmapRange');
+    if (isMobile) {
+      rangeLabel.textContent = getMonthName(startMonth);
+    } else {
+      rangeLabel.textContent = getMonthName(startMonth) + ' - ' + getMonthName(endMonth);
+    }
+    
+    // Generate data for this range
+    const rangeData = [];
+    for (let d = new Date(startMonth); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split('T')[0];
+      const count = activityMap[dateStr] || 0;
+      rangeData.push([dateStr, count]);
+    }
+    
+    // Check if today is in this range for highlighting
+    const todayInRange = todayStr >= rangeStartStr && todayStr <= rangeEndStr;
+    
+    // Update chart
+    heatmapChart.setOption({
+      tooltip: {
+        trigger: 'item',
+        formatter: function(p) {
+          if (!p.value) return '';
+          const date = p.value[0];
+          const count = p.value[1];
+          const isToday = date === todayStr ? ' (Today)' : '';
+          return date + isToday + '<br>Activities: ' + count;
+        }
       },
-      // Today highlight (yellow border)
-      {
-        type: 'scatter',
-        coordinateSystem: 'calendar',
-        symbolSize: isMobile ? 16 : 12,
-        symbol: 'roundRect',
-        data: [[todayStr, activityMap[todayStr] || 0]],
-        itemStyle: {
-          color: 'transparent',
-          borderColor: '#fbbf24',
-          borderWidth: 2
+      visualMap: {
+        show: !isMobile,
+        min: 0,
+        max: 5,
+        calculable: false,
+        orient: 'horizontal',
+        right: 30,
+        bottom: 5,
+        itemWidth: 12,
+        itemHeight: 12,
+        inRange: { color: ['#f5f5f5', '#9be9a8', '#40c463', '#30a14e', '#216e39'] },
+        text: ['More', 'Less'],
+        textStyle: { color: '#666', fontSize: 10 }
+      },
+      calendar: {
+        top: isMobile ? 15 : 25,
+        bottom: isMobile ? 5 : 30,
+        left: isMobile ? 25 : 40,
+        right: isMobile ? 5 : 20,
+        cellSize: isMobile ? ['auto', 18] : 'auto',
+        range: [rangeStartStr, rangeEndStr],
+        itemStyle: { borderWidth: 2, borderColor: '#fff', borderRadius: 2 },
+        splitLine: { show: false },
+        yearLabel: { show: false },
+        monthLabel: { show: !isMobile, nameMap: 'en', color: '#666', fontSize: 10 },
+        dayLabel: { firstDay: 0, nameMap: ['S','M','T','W','T','F','S'], color: '#999', fontSize: isMobile ? 8 : 9 }
+      },
+      series: [
+        {
+          type: 'heatmap',
+          coordinateSystem: 'calendar',
+          data: rangeData
         },
-        zlevel: 1
-      }
-    ]
+        // Today highlight (only if in range)
+        {
+          type: 'scatter',
+          coordinateSystem: 'calendar',
+          symbolSize: isMobile ? 16 : 12,
+          symbol: 'roundRect',
+          data: todayInRange ? [[todayStr, activityMap[todayStr] || 0]] : [],
+          itemStyle: {
+            color: 'transparent',
+            borderColor: '#fbbf24',
+            borderWidth: 2
+          },
+          zlevel: 1
+        }
+      ]
+    });
+    
+    // Update button states (disable Next if at current month)
+    document.getElementById('heatmapNext').disabled = heatmapOffset >= 0;
+  }
+  
+  // Navigation button handlers
+  document.getElementById('heatmapPrev').addEventListener('click', function() {
+    heatmapOffset -= monthsToShow;
+    updateHeatmapRange();
   });
+  
+  document.getElementById('heatmapNext').addEventListener('click', function() {
+    if (heatmapOffset < 0) {
+      heatmapOffset += monthsToShow;
+      if (heatmapOffset > 0) heatmapOffset = 0;
+      updateHeatmapRange();
+    }
+  });
+  
+  // Initialize heatmap
+  updateHeatmapRange();
 
   // Heatmap click handler - show daily recap
   heatmapChart.on('click', function(params) {
+    // Hide tooltip immediately on click (fixes sticky hover on mobile)
+    heatmapChart.dispatchAction({ type: 'hideTip' });
+    
     if (params.value && params.value[0]) {
       showDailyRecap(params.value[0]);
     }
   });
+
+  // Hide tooltip when touching outside on mobile
+  if (isMobile) {
+    document.addEventListener('touchstart', function(e) {
+      if (!document.getElementById('heatmapChart').contains(e.target)) {
+        heatmapChart.dispatchAction({ type: 'hideTip' });
+      }
+    });
+  }
 
   // Calories line chart
   const calChart = echarts.init(document.getElementById('calChart'));
@@ -355,9 +414,10 @@ document.addEventListener('DOMContentLoaded', function() {
   } else {
     calChart.setOption({
       tooltip: tooltipStyle,
-      grid: gridStyle,
+      grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
       xAxis: { type: 'category', data: calDates, axisLine: { lineStyle: { color: '#ddd' } }, axisLabel: { color: '#666' } },
       yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f0f0f0' } }, axisLabel: { color: '#666' } },
+      dataZoom: [{ type: 'slider', start: calDates.length > 7 ? 100 - (7 / calDates.length * 100) : 0, end: 100, height: 20, bottom: 5, borderColor: '#e9ecef', fillerColor: 'rgba(99,102,241,0.1)', handleStyle: { color: '#6366f1' } }],
       series: [{ data: calValues, type: 'line', smooth: true, lineStyle: { width: 3, color: '#6366f1' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(99,102,241,0.35)' }, { offset: 1, color: 'rgba(99,102,241,0.05)' }]) }, symbol: 'circle', symbolSize: 8, itemStyle: { color: '#6366f1' } }]
     });
   }
@@ -369,9 +429,10 @@ document.addEventListener('DOMContentLoaded', function() {
   } else {
     exChart.setOption({
       tooltip: tooltipStyle,
-      grid: gridStyle,
+      grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
       xAxis: { type: 'category', data: exDates, axisLine: { lineStyle: { color: '#ddd' } }, axisLabel: { color: '#666' } },
       yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f0f0f0' } }, axisLabel: { color: '#666' } },
+      dataZoom: [{ type: 'slider', start: exDates.length > 7 ? 100 - (7 / exDates.length * 100) : 0, end: 100, height: 20, bottom: 5, borderColor: '#e9ecef', fillerColor: 'rgba(16,185,129,0.1)', handleStyle: { color: '#10b981' } }],
       series: [{ data: exValues, type: 'bar', barWidth: '50%', itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#34d399' }, { offset: 1, color: '#10b981' }]), borderRadius: [6, 6, 0, 0] } }]
     });
   }
@@ -383,9 +444,10 @@ document.addEventListener('DOMContentLoaded', function() {
   } else {
     wtChart.setOption({
       tooltip: tooltipStyle,
-      grid: gridStyle,
+      grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
       xAxis: { type: 'category', data: wtDates, axisLine: { lineStyle: { color: '#ddd' } }, axisLabel: { color: '#666' } },
       yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f0f0f0' } }, axisLabel: { color: '#666' }, scale: true },
+      dataZoom: [{ type: 'slider', start: wtDates.length > 7 ? 100 - (7 / wtDates.length * 100) : 0, end: 100, height: 20, bottom: 5, borderColor: '#e9ecef', fillerColor: 'rgba(245,158,11,0.1)', handleStyle: { color: '#f59e0b' } }],
       series: [{ data: wtValues, type: 'line', smooth: true, lineStyle: { width: 3, color: '#f59e0b' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(245,158,11,0.35)' }, { offset: 1, color: 'rgba(245,158,11,0.05)' }]) }, symbol: 'circle', symbolSize: 8, itemStyle: { color: '#f59e0b' } }]
     });
   }
