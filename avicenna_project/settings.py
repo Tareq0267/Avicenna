@@ -21,6 +21,9 @@ USE_TZ = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost','cybilcut.pythonanywhere.com']
 
+# For ngrok testing - allows CSRF to work with ngrok URLs
+# CSRF_TRUSTED_ORIGINS = ['.ngrok-free.app']
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
