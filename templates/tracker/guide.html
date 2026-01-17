@@ -1,0 +1,627 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="guide-wrapper">
+  <div class="guide-container">
+
+    <!-- Hero Section -->
+    <div class="guide-hero">
+      <div class="hero-icon">
+        <i class="bi bi-book"></i>
+      </div>
+      <h1>Getting Started with Avicenna</h1>
+      <p class="lead">Track your nutrition and exercise using AI-powered logging</p>
+    </div>
+
+    <!-- How It Works -->
+    <section class="guide-section">
+      <h2><i class="bi bi-lightbulb me-2"></i>How It Works</h2>
+      <div class="workflow-steps">
+        <div class="workflow-step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h4>Tell AI What You Ate/Did</h4>
+            <p>Describe your meals and exercises to ChatGPT, Claude, or any AI assistant in natural language.</p>
+          </div>
+        </div>
+        <div class="workflow-arrow"><i class="bi bi-arrow-right"></i></div>
+        <div class="workflow-step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h4>AI Generates JSON</h4>
+            <p>The AI estimates calories and formats everything into a structured JSON format.</p>
+          </div>
+        </div>
+        <div class="workflow-arrow"><i class="bi bi-arrow-right"></i></div>
+        <div class="workflow-step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h4>Import to Avicenna</h4>
+            <p>Copy the JSON and paste it into Avicenna's Import feature. Done!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- The Prompt -->
+    <section class="guide-section">
+      <h2><i class="bi bi-chat-dots me-2"></i>The AI Prompt</h2>
+      <p>Copy this prompt and give it to your AI assistant (ChatGPT, Claude, Gemini, etc.) to set up your food/exercise tracker:</p>
+
+      <div class="prompt-card">
+        <div class="prompt-header">
+          <span><i class="bi bi-terminal me-2"></i>AI Prompt Template</span>
+          <button class="btn btn-sm btn-outline-light copy-btn" onclick="copyPrompt()">
+            <i class="bi bi-clipboard me-1"></i>Copy
+          </button>
+        </div>
+        <div class="prompt-content" id="aiPrompt">You are my personal nutrition and exercise tracking assistant. When I tell you what I ate or what exercise I did, you will:
+
+1. Estimate the calories for each food item (be reasonable, use common portion sizes unless I specify)
+2. Estimate calories burned for exercises based on duration and intensity
+3. Output the data in this exact JSON format that I can import into my tracking app:
+
+```json
+[
+  {
+    "date": "YYYY-MM-DD",
+    "remarks": "Optional daily summary or notes",
+    "food": [
+      {"item": "Food description", "calories": 000, "note": "optional note"}
+    ],
+    "exercise": [
+      {"activity": "Exercise name", "duration_min": 00, "calories_burned": 000}
+    ]
+  }
+]
+```
+
+Rules:
+- Always use today's date unless I specify otherwise
+- Group all food and exercise for the same day together
+- Be consistent with calorie estimates (use USDA or standard nutritional data)
+- Include helpful notes when relevant (e.g., "large portion", "with sauce")
+- If I give multiple days, create multiple day objects in the array
+- Only output the JSON code block, no extra explanation unless I ask
+
+I'll start telling you what I ate and did. Ready?</div>
+      </div>
+      <div class="copy-success" id="copySuccess">
+        <i class="bi bi-check-circle me-1"></i>Copied to clipboard!
+      </div>
+    </section>
+
+    <!-- Example Conversation -->
+    <section class="guide-section">
+      <h2><i class="bi bi-chat-left-text me-2"></i>Example Conversation</h2>
+
+      <div class="chat-example">
+        <div class="chat-message user">
+          <div class="chat-avatar"><i class="bi bi-person-fill"></i></div>
+          <div class="chat-bubble">
+            Today I had 2 eggs and toast for breakfast, a chicken sandwich for lunch, and pasta with meatballs for dinner. I also went jogging for 30 minutes.
+          </div>
+        </div>
+
+        <div class="chat-message ai">
+          <div class="chat-avatar"><i class="bi bi-robot"></i></div>
+          <div class="chat-bubble">
+            <pre><code>[
+  {
+    "date": "2025-01-17",
+    "food": [
+      {"item": "2 eggs and toast", "calories": 340, "note": "scrambled eggs, 2 slices wheat toast"},
+      {"item": "Chicken sandwich", "calories": 450, "note": "grilled chicken, standard bun"},
+      {"item": "Pasta with meatballs", "calories": 680, "note": "1.5 cups pasta, 3 meatballs"}
+    ],
+    "exercise": [
+      {"activity": "Jogging", "duration_min": 30, "calories_burned": 280}
+    ],
+    "remarks": "Balanced day with good protein intake. Net calories ~1190 after exercise."
+  }
+]</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Import Instructions -->
+    <section class="guide-section">
+      <h2><i class="bi bi-upload me-2"></i>How to Import</h2>
+      <div class="import-steps">
+        <div class="import-step">
+          <div class="step-icon"><i class="bi bi-clipboard"></i></div>
+          <p><strong>Step 1:</strong> Copy the JSON output from your AI</p>
+        </div>
+        <div class="import-step">
+          <div class="step-icon"><i class="bi bi-box-arrow-in-up"></i></div>
+          <p><strong>Step 2:</strong> Click the <span class="badge bg-primary"><i class="bi bi-upload"></i> Import</span> button in the navbar</p>
+        </div>
+        <div class="import-step">
+          <div class="step-icon"><i class="bi bi-file-earmark-code"></i></div>
+          <p><strong>Step 3:</strong> Paste your JSON into the text area</p>
+        </div>
+        <div class="import-step">
+          <div class="step-icon"><i class="bi bi-check-circle"></i></div>
+          <p><strong>Step 4:</strong> Click Import and watch your data appear on the dashboard!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- JSON Format Reference -->
+    <section class="guide-section">
+      <h2><i class="bi bi-code-slash me-2"></i>JSON Format Reference</h2>
+      <div class="format-table-wrapper">
+        <table class="format-table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Required</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="section-header"><td colspan="3">Day Level</td></tr>
+            <tr>
+              <td><code>date</code></td>
+              <td><span class="badge bg-danger">Yes</span></td>
+              <td>Date in YYYY-MM-DD format</td>
+            </tr>
+            <tr>
+              <td><code>remarks</code></td>
+              <td><span class="badge bg-secondary">No</span></td>
+              <td>Daily notes or summary</td>
+            </tr>
+            <tr class="section-header"><td colspan="3">Food Items (use "food" or "dietary")</td></tr>
+            <tr>
+              <td><code>item</code></td>
+              <td><span class="badge bg-danger">Yes</span></td>
+              <td>Food description</td>
+            </tr>
+            <tr>
+              <td><code>calories</code></td>
+              <td><span class="badge bg-danger">Yes</span></td>
+              <td>Calorie count (number)</td>
+            </tr>
+            <tr>
+              <td><code>note</code></td>
+              <td><span class="badge bg-secondary">No</span></td>
+              <td>Additional notes</td>
+            </tr>
+            <tr class="section-header"><td colspan="3">Exercise Items</td></tr>
+            <tr>
+              <td><code>activity</code></td>
+              <td><span class="badge bg-danger">Yes</span></td>
+              <td>Exercise name</td>
+            </tr>
+            <tr>
+              <td><code>duration_min</code></td>
+              <td><span class="badge bg-danger">Yes</span></td>
+              <td>Duration in minutes</td>
+            </tr>
+            <tr>
+              <td><code>calories_burned</code></td>
+              <td><span class="badge bg-secondary">No</span></td>
+              <td>Estimated calories burned</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Tips -->
+    <section class="guide-section">
+      <h2><i class="bi bi-stars me-2"></i>Pro Tips</h2>
+      <div class="tips-grid">
+        <div class="tip-card">
+          <div class="tip-icon"><i class="bi bi-calendar-week"></i></div>
+          <h5>Batch Multiple Days</h5>
+          <p>You can tell the AI about multiple days at once. Just specify dates and it will create separate entries for each day.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon"><i class="bi bi-arrow-repeat"></i></div>
+          <h5>Keep the Chat Going</h5>
+          <p>Keep your AI chat open throughout the day. Add meals as you eat them, then export at the end of the day.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon"><i class="bi bi-pencil"></i></div>
+          <h5>Be Specific</h5>
+          <p>The more details you give (portion sizes, cooking methods), the more accurate the calorie estimates will be.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon"><i class="bi bi-speedometer2"></i></div>
+          <h5>Track Weight Separately</h5>
+          <p>Use the <span class="badge bg-warning text-dark"><i class="bi bi-plus-circle"></i> Weight</span> button to log your weight - it's tracked separately from the JSON import.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="guide-cta">
+      {% if user.is_authenticated %}
+        <a href="/tracker/dashboard/" class="btn btn-primary btn-lg">
+          <i class="bi bi-grid me-2"></i>Go to Dashboard
+        </a>
+      {% else %}
+        <a href="/accounts/login/" class="btn btn-primary btn-lg">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Sign In to Get Started
+        </a>
+      {% endif %}
+    </section>
+
+  </div>
+</div>
+
+<style>
+.guide-wrapper {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.guide-container {
+  background: var(--card-bg, #fff);
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 24px rgba(99, 102, 241, 0.08);
+  overflow: hidden;
+}
+
+/* Hero */
+.guide-hero {
+  background: linear-gradient(135deg, #6366f1, #818cf8);
+  color: #fff;
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.hero-icon {
+  width: 80px;
+  height: 80px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin: 0 auto 1.5rem;
+}
+
+.guide-hero h1 {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.guide-hero .lead {
+  opacity: 0.9;
+  margin: 0;
+}
+
+/* Sections */
+.guide-section {
+  padding: 2rem;
+  border-bottom: 1px solid var(--border, #e9ecef);
+}
+
+.guide-section:last-of-type {
+  border-bottom: none;
+}
+
+.guide-section h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text, #1f2937);
+  margin-bottom: 1.25rem;
+}
+
+/* Workflow Steps */
+.workflow-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.workflow-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex: 1;
+  min-width: 200px;
+  max-width: 280px;
+}
+
+.step-number {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #6366f1, #818cf8);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.step-content h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.step-content p {
+  font-size: 0.875rem;
+  color: var(--text-muted, #6b7280);
+  margin: 0;
+}
+
+.workflow-arrow {
+  color: var(--primary, #6366f1);
+  font-size: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .workflow-arrow {
+    display: none;
+  }
+  .workflow-steps {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .workflow-step {
+    max-width: none;
+  }
+}
+
+/* Prompt Card */
+.prompt-card {
+  background: #1e1e2e;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.prompt-header {
+  background: #2d2d3d;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #a5a5b5;
+  font-size: 0.875rem;
+}
+
+.prompt-content {
+  padding: 1rem;
+  color: #e0e0e0;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.copy-btn {
+  border-color: rgba(255,255,255,0.3);
+  color: #fff;
+}
+
+.copy-btn:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.5);
+  color: #fff;
+}
+
+.copy-success {
+  display: none;
+  color: #10b981;
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+.copy-success.show {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Chat Example */
+.chat-example {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.chat-message {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.chat-message.user {
+  flex-direction: row;
+}
+
+.chat-message.ai {
+  flex-direction: row;
+}
+
+.chat-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.chat-message.user .chat-avatar {
+  background: #6366f1;
+  color: #fff;
+}
+
+.chat-message.ai .chat-avatar {
+  background: #10b981;
+  color: #fff;
+}
+
+.chat-bubble {
+  background: var(--bg-secondary, #f3f4f6);
+  border-radius: 1rem;
+  padding: 1rem;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.chat-bubble pre {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.chat-bubble code {
+  color: inherit;
+}
+
+/* Import Steps */
+.import-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.import-step {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  background: var(--bg-secondary, #f9fafb);
+  border-radius: 0.75rem;
+}
+
+.step-icon {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #6366f1, #818cf8);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  margin: 0 auto 0.75rem;
+}
+
+.import-step p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted, #6b7280);
+}
+
+/* Format Table */
+.format-table-wrapper {
+  overflow-x: auto;
+}
+
+.format-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.format-table th,
+.format-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border, #e9ecef);
+}
+
+.format-table th {
+  background: var(--bg-secondary, #f9fafb);
+  font-weight: 600;
+}
+
+.format-table code {
+  background: #e5e7eb;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.section-header td {
+  background: var(--primary, #6366f1);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Tips Grid */
+.tips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.tip-card {
+  background: var(--bg-secondary, #f9fafb);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.tip-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #6366f1, #818cf8);
+  color: #fff;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  margin: 0 auto 0.75rem;
+}
+
+.tip-card h5 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.tip-card p {
+  font-size: 0.85rem;
+  color: var(--text-muted, #6b7280);
+  margin: 0;
+}
+
+/* CTA */
+.guide-cta {
+  text-align: center;
+  padding: 2rem;
+  background: var(--bg-secondary, #f9fafb);
+}
+
+.guide-cta .btn-lg {
+  padding: 0.875rem 2rem;
+  font-weight: 600;
+  border-radius: 0.75rem;
+}
+</style>
+
+<script>
+function copyPrompt() {
+  const promptText = document.getElementById('aiPrompt').textContent;
+  navigator.clipboard.writeText(promptText).then(() => {
+    const successEl = document.getElementById('copySuccess');
+    successEl.classList.add('show');
+    setTimeout(() => successEl.classList.remove('show'), 2000);
+  });
+}
+</script>
+{% endblock %}
