@@ -8,9 +8,6 @@ load_dotenv(BASE_DIR / '.env')
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'insecure-default-key')
 
-# Cutesy mode for Qaisara - set FOR_HER=true in .env to enable personalized wording
-FOR_HER = os.environ.get('FOR_HER', 'false').lower() == 'true'
-
 DEBUG = True  # Set to False in production
 # SECURE_SSL_REDIRECT = not DEBUG
 # SESSION_COOKIE_SECURE = not DEBUG
