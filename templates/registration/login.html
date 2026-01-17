@@ -12,8 +12,8 @@
 
     <!-- Header -->
     <div class="login-header">
-      <h2 id="formTitle">Welcome Back</h2>
-      <p id="formSubtitle">Sign in to continue to Avicenna</p>
+      <h2 id="formTitle">{% if FOR_HER %}Hey There, Beautiful{% else %}Welcome Back{% endif %}</h2>
+      <p id="formSubtitle">{% if FOR_HER %}Sign in to track your health journey{% else %}Sign in to continue to Avicenna{% endif %}</p>
     </div>
 
     <!-- Login Form -->
@@ -93,14 +93,18 @@
 
     <!-- Toggle between forms -->
     <div class="form-toggle">
-      <span id="toggleText">Don't have an account?</span>
-      <a href="#" id="toggleLink" class="toggle-link">Create one</a>
+      <span id="toggleText">{% if FOR_HER %}First time here?{% else %}Don't have an account?{% endif %}</span>
+      <a href="#" id="toggleLink" class="toggle-link">{% if FOR_HER %}Let's get you set up!{% else %}Create one{% endif %}</a>
     </div>
 
     <!-- New user guide link -->
     <div class="guide-link">
       <a href="/tracker/guide/">
+        {% if FOR_HER %}
+        <i class="bi bi-heart me-1"></i>Is your name Qaisara, is cute and new here? Click me to know about this app!
+        {% else %}
         <i class="bi bi-book me-1"></i>New here? Read the Getting Started Guide
+        {% endif %}
       </a>
     </div>
 
@@ -341,7 +345,28 @@ document.addEventListener('DOMContentLoaded', function() {
   const formSubtitle = document.getElementById('formSubtitle');
   const formIcon = document.getElementById('formIcon');
 
+  // Cute mode toggle from Django settings
+  const forHer = {{ FOR_HER|yesno:"true,false" }};
+
   let isLoginMode = true;
+
+  // Text variations
+  const texts = {
+    login: {
+      title: forHer ? 'Hey There, Beautiful' : 'Welcome Back',
+      subtitle: forHer ? 'Sign in to track your health journey' : 'Sign in to continue to Avicenna',
+      icon: forHer ? '<i class="bi bi-heart-fill"></i>' : '<i class="bi bi-person-check"></i>',
+      toggleText: forHer ? "First time here?" : "Don't have an account?",
+      toggleLink: forHer ? "Let's get you set up!" : 'Create one'
+    },
+    register: {
+      title: forHer ? 'Join the Journey' : 'Create Account',
+      subtitle: forHer ? "Let's start tracking together!" : 'Join Avicenna to track your health',
+      icon: forHer ? '<i class="bi bi-stars"></i>' : '<i class="bi bi-person-plus"></i>',
+      toggleText: forHer ? 'Already part of the fam?' : 'Already have an account?',
+      toggleLink: forHer ? 'Welcome back!' : 'Sign in'
+    }
+  };
 
   toggleLink.addEventListener('click', function(e) {
     e.preventDefault();
@@ -350,19 +375,19 @@ document.addEventListener('DOMContentLoaded', function() {
     if (isLoginMode) {
       loginForm.style.display = 'block';
       registerForm.style.display = 'none';
-      formTitle.textContent = 'Welcome Back';
-      formSubtitle.textContent = 'Sign in to continue to Avicenna';
-      formIcon.innerHTML = '<i class="bi bi-person-check"></i>';
-      toggleText.textContent = "Don't have an account?";
-      toggleLink.textContent = 'Create one';
+      formTitle.textContent = texts.login.title;
+      formSubtitle.textContent = texts.login.subtitle;
+      formIcon.innerHTML = texts.login.icon;
+      toggleText.textContent = texts.login.toggleText;
+      toggleLink.textContent = texts.login.toggleLink;
     } else {
       loginForm.style.display = 'none';
       registerForm.style.display = 'block';
-      formTitle.textContent = 'Create Account';
-      formSubtitle.textContent = 'Join Avicenna to track your health';
-      formIcon.innerHTML = '<i class="bi bi-person-plus"></i>';
-      toggleText.textContent = 'Already have an account?';
-      toggleLink.textContent = 'Sign in';
+      formTitle.textContent = texts.register.title;
+      formSubtitle.textContent = texts.register.subtitle;
+      formIcon.innerHTML = texts.register.icon;
+      toggleText.textContent = texts.register.toggleText;
+      toggleLink.textContent = texts.register.toggleLink;
       clearErrors();
     }
   });
