@@ -1,19 +1,33 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth import get_user_model
 from .models import DietaryEntry, ExerciseEntry, WeightEntry, UserProfile
 
+User = get_user_model()
 
-@admin.register(UserProfile)
-class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'partner', 'get_partner_status')
-    list_filter = ('partner',)
-    search_fields = ('user__username', 'partner__username')
-    raw_id_fields = ['partner']
 
-    def get_partner_status(self, obj):
-        if obj.partner:
-            return f"Linked with {obj.partner.username}"
-        return "No partner"
-    get_partner_status.short_description = 'Status'
+class UserProfileInline(admin.StackedInline):
+    """Inline admin for UserProfile - appears on User edit page."""
+    model = UserProfile
+    can_delete = False
+    verbose_name = 'Profile'
+    verbose_name_plural = 'Profile'
+    fk_name = 'user'
+
+
+class UserAdmin(BaseUserAdmin):
+    """Extended User admin with profile inline."""
+    inlines = (UserProfileInline,)
+
+    def get_inline_instances(self, request, obj=None):
+        if not obj:
+            return []
+        return super().get_inline_instances(request, obj)
+
+
+# Unregister the default User admin and register our custom one
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
 
 
 @admin.register(DietaryEntry)
