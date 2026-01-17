@@ -97,6 +97,13 @@
       <a href="#" id="toggleLink" class="toggle-link">Create one</a>
     </div>
 
+    <!-- New user guide link -->
+    <div class="guide-link">
+      <a href="/tracker/guide/">
+        <i class="bi bi-book me-1"></i>New here? Read the Getting Started Guide
+      </a>
+    </div>
+
     <!-- Footer -->
     <div class="login-footer">
       <span class="brand-icon">💪</span>
@@ -250,6 +257,27 @@
   }
 
   .toggle-link:hover {
+    color: #4f46e5;
+    text-decoration: underline;
+  }
+
+  .guide-link {
+    text-align: center;
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: var(--bg-secondary, #f9fafb);
+    border-radius: 0.5rem;
+  }
+
+  .guide-link a {
+    color: var(--primary, #6366f1);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .guide-link a:hover {
     color: #4f46e5;
     text-decoration: underline;
   }

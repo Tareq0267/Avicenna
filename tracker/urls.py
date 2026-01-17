@@ -9,4 +9,5 @@ urlpatterns = [
     path('import-json/', views.import_json, name='import_json'),
     path('add-weight/', views.add_weight, name='add_weight'),
     path('daily-recap/<str:date_str>/', views.daily_recap, name='daily_recap'),
+    path('guide/', views.guide, name='guide'),
 ]

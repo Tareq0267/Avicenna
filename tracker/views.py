@@ -274,6 +274,11 @@ def add_weight(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
+def guide(request):
+    """Display the getting started guide."""
+    return render(request, 'tracker/guide.html')
+
+
 @login_required
 def daily_recap(request, date_str):
     """Get daily recap data for a specific date."""
