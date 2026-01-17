@@ -1,8 +1,30 @@
-from django.contrib.auth import logout
+from django.contrib.auth import logout, login
+from django.contrib.auth.forms import UserCreationForm
 
 # Custom logout view to guarantee session is cleared
 def custom_logout(request):
     logout(request)
+    return redirect('/accounts/login/')
+
+
+def register(request):
+    """Handle user registration."""
+    if request.user.is_authenticated:
+        return redirect('tracker:dashboard')
+
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('tracker:dashboard')
+        else:
+            # Return errors as JSON for AJAX handling
+            errors = {}
+            for field, error_list in form.errors.items():
+                errors[field] = list(error_list)
+            return JsonResponse({'success': False, 'errors': errors})
+
     return redirect('/accounts/login/')
 import json
 from collections import defaultdict
