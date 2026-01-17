@@ -5,12 +5,12 @@
   <div class="guide-container">
 
     <!-- Hero Section -->
-    <div class="guide-hero">
+    <div class="guide-hero {% if FOR_HER %}for-her{% endif %}">
       <div class="hero-icon">
-        <i class="bi bi-book"></i>
+        {% if FOR_HER %}<i class="bi bi-heart-fill"></i>{% else %}<i class="bi bi-book"></i>{% endif %}
       </div>
-      <h1>Getting Started with Avicenna</h1>
-      <p class="lead">Track your nutrition and exercise using AI-powered logging</p>
+      <h1>{% if FOR_HER %}Hey Qaisara! Let's Get You Started{% else %}Getting Started with Avicenna{% endif %}</h1>
+      <p class="lead">{% if FOR_HER %}Your personal health journey starts here{% else %}Track your nutrition and exercise using AI-powered logging{% endif %}</p>
     </div>
 
     <!-- How It Works -->
@@ -236,15 +236,25 @@ I'll start telling you what I ate and did. Ready?</div>
       </div>
     </section>
 
+    <!-- Cheeky Note (only shown in FOR_HER mode) -->
+    {% if FOR_HER %}
+    <section class="guide-section cheeky-note">
+      <div class="cheeky-content">
+        <div class="cheeky-icon"><i class="bi bi-heart-fill"></i></div>
+        <p>For more info, please ask your talking stage / future boyfriend / future husband <strong>(Tareq Adam)</strong>... aminnn</p>
+      </div>
+    </section>
+    {% endif %}
+
     <!-- CTA -->
     <section class="guide-cta">
       {% if user.is_authenticated %}
         <a href="/tracker/dashboard/" class="btn btn-primary btn-lg">
-          <i class="bi bi-grid me-2"></i>Go to Dashboard
+          {% if FOR_HER %}<i class="bi bi-heart me-2"></i>Let's Go!{% else %}<i class="bi bi-grid me-2"></i>Go to Dashboard{% endif %}
         </a>
       {% else %}
         <a href="/accounts/login/" class="btn btn-primary btn-lg">
-          <i class="bi bi-box-arrow-in-right me-2"></i>Sign In to Get Started
+          {% if FOR_HER %}<i class="bi bi-heart me-2"></i>Ready to Start!{% else %}<i class="bi bi-box-arrow-in-right me-2"></i>Sign In to Get Started{% endif %}
         </a>
       {% endif %}
     </section>
@@ -272,6 +282,15 @@ I'll start telling you what I ate and did. Ready?</div>
   color: #fff;
   text-align: center;
   padding: 3rem 2rem;
+}
+
+/* Cute pink theme for her */
+.guide-hero.for-her {
+  background: linear-gradient(135deg, #ec4899, #f472b6);
+}
+
+.guide-hero.for-her .hero-icon {
+  animation: heartbeat 1.5s ease-in-out infinite;
 }
 
 .hero-icon {
@@ -598,6 +617,50 @@ I'll start telling you what I ate and did. Ready?</div>
   font-size: 0.85rem;
   color: var(--text-muted, #6b7280);
   margin: 0;
+}
+
+/* Cheeky Note */
+.cheeky-note {
+  background: linear-gradient(135deg, #fdf2f8, #fce7f3);
+  border-bottom: none !important;
+}
+
+.cheeky-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  text-align: center;
+}
+
+.cheeky-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #ec4899, #f472b6);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.cheeky-content p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #831843;
+  font-style: italic;
+}
+
+.cheeky-content strong {
+  color: #be185d;
 }
 
 /* CTA */
