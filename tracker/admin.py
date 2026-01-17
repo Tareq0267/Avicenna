@@ -1,5 +1,20 @@
 from django.contrib import admin
-from .models import DietaryEntry, ExerciseEntry, WeightEntry
+from .models import DietaryEntry, ExerciseEntry, WeightEntry, UserProfile
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'partner', 'get_partner_status')
+    list_filter = ('partner',)
+    search_fields = ('user__username', 'partner__username')
+    raw_id_fields = ['partner']
+
+    def get_partner_status(self, obj):
+        if obj.partner:
+            return f"Linked with {obj.partner.username}"
+        return "No partner"
+    get_partner_status.short_description = 'Status'
+
 
 @admin.register(DietaryEntry)
 class DietaryEntryAdmin(admin.ModelAdmin):

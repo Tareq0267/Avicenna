@@ -2,6 +2,42 @@
 {% load static %}
 
 {% block content %}
+<!-- Partner Mode Banner (when viewing partner's dashboard) -->
+{% if viewing_partner %}
+<div class="partner-banner">
+  <div class="partner-banner-content">
+    <div class="partner-banner-icon">
+      <i class="bi bi-heart-fill"></i>
+    </div>
+    <div class="partner-banner-text">
+      <span class="partner-banner-label">Peeking at</span>
+      <span class="partner-banner-name">{{ partner_name }}'s Journey</span>
+    </div>
+    <a href="{% url 'tracker:dashboard' %}" class="btn btn-sm btn-light partner-banner-btn">
+      <i class="bi bi-arrow-left me-1"></i>Back to Mine
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- Partner Toggle Card (only show if user has a partner and viewing own dashboard) -->
+{% if partner and not viewing_partner %}
+<div class="partner-toggle-wrapper mb-3">
+  <a href="{% url 'tracker:partner_dashboard' %}" class="partner-toggle-card">
+    <div class="partner-toggle-icon">
+      <i class="bi bi-heart-fill"></i>
+    </div>
+    <div class="partner-toggle-text">
+      <span class="partner-toggle-label">Couples Mode</span>
+      <span class="partner-toggle-name">Peek at {{ partner_name }}'s progress</span>
+    </div>
+    <div class="partner-toggle-arrow">
+      <i class="bi bi-chevron-right"></i>
+    </div>
+  </a>
+</div>
+{% endif %}
+
 <!-- Activity Heatmap -->
 <div class="row mb-4">
   <div class="col-12">
@@ -253,6 +289,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const heatmapStart = '{{ heatmap_start }}';
   const heatmapEnd = '{{ heatmap_end }}';
   const todayStr = '{{ today }}';
+  const viewingPartner = {{ viewing_partner|yesno:"true,false" }};
+  const targetUserId = {{ target_user.id }};
 
   const tooltipStyle = { trigger: 'axis', backgroundColor: '#fff', borderColor: '#e5e5e5', textStyle: { color: '#333' } };
   const gridStyle = { left: '3%', right: '4%', bottom: '3%', containLabel: true };
@@ -473,9 +511,13 @@ document.addEventListener('DOMContentLoaded', function() {
     recapEmpty.classList.add('d-none');
     
     modal.show();
-    
-    // Fetch daily data
-    fetch('/tracker/daily-recap/' + dateStr + '/')
+
+    // Fetch daily data (include user ID if viewing partner's data)
+    let recapUrl = '/tracker/daily-recap/' + dateStr + '/';
+    if (viewingPartner) {
+      recapUrl = '/tracker/daily-recap/' + dateStr + '/user/' + targetUserId + '/';
+    }
+    fetch(recapUrl)
       .then(response => response.json())
       .then(data => {
         recapLoading.classList.add('d-none');
