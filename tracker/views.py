@@ -1,3 +1,35 @@
+from django.views.decorators.http import require_POST
+from django.http import HttpResponseForbidden
+from django.contrib.auth.decorators import login_required
+@login_required
+@require_POST
+def delete_dietary_entry(request, entry_id):
+    try:
+        entry = DietaryEntry.objects.get(id=entry_id, user=request.user)
+    except DietaryEntry.DoesNotExist:
+        return HttpResponseForbidden()
+    entry.delete()
+    return redirect('tracker:dashboard')
+
+@login_required
+@require_POST
+def delete_exercise_entry(request, entry_id):
+    try:
+        entry = ExerciseEntry.objects.get(id=entry_id, user=request.user)
+    except ExerciseEntry.DoesNotExist:
+        return HttpResponseForbidden()
+    entry.delete()
+    return redirect('tracker:dashboard')
+
+@login_required
+@require_POST
+def delete_weight_entry(request, entry_id):
+    try:
+        entry = WeightEntry.objects.get(id=entry_id, user=request.user)
+    except WeightEntry.DoesNotExist:
+        return HttpResponseForbidden()
+    entry.delete()
+    return redirect('tracker:dashboard')
 from django.contrib.auth import logout, login
 from django.contrib.auth.forms import UserCreationForm
 

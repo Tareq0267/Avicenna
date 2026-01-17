@@ -10,4 +10,9 @@ urlpatterns = [
     path('add-weight/', views.add_weight, name='add_weight'),
     path('daily-recap/<str:date_str>/', views.daily_recap, name='daily_recap'),
     path('guide/', views.guide, name='guide'),
+
+    # Delete entry URLs
+    path('delete-dietary/<int:entry_id>/', views.delete_dietary_entry, name='delete_dietary_entry'),
+    path('delete-exercise/<int:entry_id>/', views.delete_exercise_entry, name='delete_exercise_entry'),
+    path('delete-weight/<int:entry_id>/', views.delete_weight_entry, name='delete_weight_entry'),
 ]
