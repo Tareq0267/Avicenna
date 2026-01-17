@@ -33,7 +33,7 @@ from django.db.models import Sum, Count, Max
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
-from .models import DietaryEntry, ExerciseEntry, WeightEntry
+from .models import DietaryEntry, ExerciseEntry, WeightEntry, UserProfile
 
 from django.utils import timezone
 from datetime import timedelta, datetime
@@ -43,17 +43,31 @@ from django.contrib.auth.decorators import login_required
 
 from django.views.decorators.cache import never_cache
 
+def get_partner(user):
+    """Get the partner user if linked, otherwise None."""
+    try:
+        profile = user.profile
+        return profile.partner
+    except UserProfile.DoesNotExist:
+        return None
+
+
 @login_required
 @never_cache
-def dashboard(request):
+def dashboard(request, view_partner=False):
     today = timezone.now().date()
 
+    # Determine which user's data to show
+    partner = get_partner(request.user)
+    viewing_partner = view_partner and partner is not None
+    target_user = partner if viewing_partner else request.user
+
     # Find the most recent entry date to base charts on actual data
-    latest_dietary = DietaryEntry.objects.filter(user=request.user).aggregate(m=Max('date'))['m']
-    latest_exercise = ExerciseEntry.objects.filter(user=request.user).aggregate(m=Max('date'))['m']
-    latest_weight = WeightEntry.objects.filter(user=request.user).aggregate(m=Max('date'))['m']
+    latest_dietary = DietaryEntry.objects.filter(user=target_user).aggregate(m=Max('date'))['m']
+    latest_exercise = ExerciseEntry.objects.filter(user=target_user).aggregate(m=Max('date'))['m']
+    latest_weight = WeightEntry.objects.filter(user=target_user).aggregate(m=Max('date'))['m']
     latest_dates = [d for d in [latest_dietary, latest_exercise, latest_weight, today] if d]
-    
+
     if latest_dates:
         chart_end = max(latest_dates)
         chart_start = chart_end - timedelta(days=29)  # 30 days of data for scrollable charts
@@ -61,15 +75,15 @@ def dashboard(request):
         chart_end = today
         chart_start = today - timedelta(days=29)
 
-    # --- recent entries for tables (user-specific) ---
-    dietary_recent = DietaryEntry.objects.filter(user=request.user).order_by('-date', '-id')[:25]
-    exercise_recent = ExerciseEntry.objects.filter(user=request.user).order_by('-date', '-id')[:15]
-    weight_recent = WeightEntry.objects.filter(user=request.user).order_by('-date')[:10]
+    # --- recent entries for tables (target user) ---
+    dietary_recent = DietaryEntry.objects.filter(user=target_user).order_by('-date', '-id')[:25]
+    exercise_recent = ExerciseEntry.objects.filter(user=target_user).order_by('-date', '-id')[:15]
+    weight_recent = WeightEntry.objects.filter(user=target_user).order_by('-date')[:10]
 
     # --- aggregate data for charts (based on actual data range) ---
     # Calories per day (line chart)
     cal_qs = (
-        DietaryEntry.objects.filter(user=request.user, date__gte=chart_start, date__lte=chart_end)
+        DietaryEntry.objects.filter(user=target_user, date__gte=chart_start, date__lte=chart_end)
         .values('date')
         .annotate(total=Sum('calories'))
         .order_by('date')
@@ -79,7 +93,7 @@ def dashboard(request):
 
     # Exercise minutes per day (bar chart)
     ex_qs = (
-        ExerciseEntry.objects.filter(user=request.user, date__gte=chart_start, date__lte=chart_end)
+        ExerciseEntry.objects.filter(user=target_user, date__gte=chart_start, date__lte=chart_end)
         .values('date')
         .annotate(total=Sum('duration_minutes'))
         .order_by('date')
@@ -88,12 +102,12 @@ def dashboard(request):
     ex_values = [r['total'] or 0 for r in ex_qs]
 
     # Weight trend (line chart) - show all weight data in range
-    wt_qs = WeightEntry.objects.filter(user=request.user, date__gte=chart_start, date__lte=chart_end).order_by('date')
+    wt_qs = WeightEntry.objects.filter(user=target_user, date__gte=chart_start, date__lte=chart_end).order_by('date')
     wt_dates = [str(w.date) for w in wt_qs]
     wt_values = [float(w.weight_kg) for w in wt_qs]
-    
+
     # Get latest weight (regardless of date range)
-    latest_weight_entry = WeightEntry.objects.filter(user=request.user).order_by('-date').first()
+    latest_weight_entry = WeightEntry.objects.filter(user=target_user).order_by('-date').first()
     latest_weight_value = float(latest_weight_entry.weight_kg) if latest_weight_entry else None
 
     # --- Heatmap: activity count per day (12 months back for navigation) ---
@@ -104,13 +118,13 @@ def dashboard(request):
 
     activity_counts = defaultdict(int)
     # count dietary entries
-    for r in DietaryEntry.objects.filter(user=request.user, date__gte=heatmap_start, date__lte=heatmap_end).values('date').annotate(c=Count('id')):
+    for r in DietaryEntry.objects.filter(user=target_user, date__gte=heatmap_start, date__lte=heatmap_end).values('date').annotate(c=Count('id')):
         activity_counts[str(r['date'])] += r['c']
     # count exercise entries
-    for r in ExerciseEntry.objects.filter(user=request.user, date__gte=heatmap_start, date__lte=heatmap_end).values('date').annotate(c=Count('id')):
+    for r in ExerciseEntry.objects.filter(user=target_user, date__gte=heatmap_start, date__lte=heatmap_end).values('date').annotate(c=Count('id')):
         activity_counts[str(r['date'])] += r['c']
     # count weight entries
-    for r in WeightEntry.objects.filter(user=request.user, date__gte=heatmap_start, date__lte=heatmap_end).values('date').annotate(c=Count('id')):
+    for r in WeightEntry.objects.filter(user=target_user, date__gte=heatmap_start, date__lte=heatmap_end).values('date').annotate(c=Count('id')):
         activity_counts[str(r['date'])] += r['c']
     # Build list [[date, count], ...]
     heatmap_data = [[d, c] for d, c in activity_counts.items()]
@@ -142,8 +156,20 @@ def dashboard(request):
         'total_calories': total_calories,
         'total_exercise_min': total_exercise_min,
         'latest_weight': latest_weight_value,
+        # Partner/couples mode
+        'viewing_partner': viewing_partner,
+        'partner': partner,
+        'partner_name': partner.username if partner else None,
+        'target_user': target_user,
     }
     return render(request, 'tracker/dashboard.html', context)
+
+
+@login_required
+@never_cache
+def partner_dashboard(request):
+    """View partner's dashboard (read-only)."""
+    return dashboard(request, view_partner=True)
 
 
 @require_POST
@@ -280,19 +306,30 @@ def guide(request):
 
 
 @login_required
-def daily_recap(request, date_str):
+def daily_recap(request, date_str, user_id=None):
     """Get daily recap data for a specific date."""
     try:
         entry_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        
+
+        # Determine which user's data to fetch
+        if user_id:
+            # Verify the user_id is the current user's partner
+            partner = get_partner(request.user)
+            if partner and partner.id == user_id:
+                target_user = partner
+            else:
+                return JsonResponse({'success': False, 'error': 'Unauthorized'})
+        else:
+            target_user = request.user
+
         # Get all entries for this date
-        dietary = list(DietaryEntry.objects.filter(date=entry_date).values(
+        dietary = list(DietaryEntry.objects.filter(user=target_user, date=entry_date).values(
             'item', 'calories', 'notes', 'remarks'
         ))
-        exercise = list(ExerciseEntry.objects.filter(date=entry_date).values(
+        exercise = list(ExerciseEntry.objects.filter(user=target_user, date=entry_date).values(
             'activity', 'duration_minutes', 'calories_burned', 'remarks'
         ))
-        weight = list(WeightEntry.objects.filter(date=entry_date).values(
+        weight = list(WeightEntry.objects.filter(user=target_user, date=entry_date).values(
             'weight_kg', 'notes'
         ))
         
