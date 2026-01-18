@@ -14,17 +14,19 @@ from tracker.admin import DietaryEntryAdmin, ExerciseEntryAdmin, WeightEntryAdmi
 
 class TestAdminRegistration:
     """Tests for model admin registration."""
-    
+
+    @pytest.fixture(autouse=True)
+    def login(self, admin_user, client):
+        client.login(username='admin', password='admin123')
+        self.client = client
+
     def test_dietary_entry_registered(self):
-        """Test DietaryEntry is registered in admin."""
         assert DietaryEntry in admin.site._registry
-    
+
     def test_exercise_entry_registered(self):
-        """Test ExerciseEntry is registered in admin."""
         assert ExerciseEntry in admin.site._registry
-    
+
     def test_weight_entry_registered(self):
-        """Test WeightEntry is registered in admin."""
         assert WeightEntry in admin.site._registry
 
 
