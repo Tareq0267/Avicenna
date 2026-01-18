@@ -13,6 +13,11 @@ urlpatterns = [
     path('daily-recap/<str:date_str>/user/<int:user_id>/', views.daily_recap, name='daily_recap_user'),
     path('guide/', views.guide, name='guide'),
 
+    # AI Food Logging
+    path('ai/', views.ai_food_log, name='ai_food_log'),
+    path('ai/parse/', views.ai_parse_food, name='ai_parse_food'),
+    path('ai/save/', views.ai_save_food, name='ai_save_food'),
+
     # Delete entry URLs
     path('delete-dietary/<int:entry_id>/', views.delete_dietary_entry, name='delete_dietary_entry'),
     path('delete-exercise/<int:entry_id>/', views.delete_exercise_entry, name='delete_exercise_entry'),

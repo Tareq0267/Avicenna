@@ -397,3 +397,119 @@ def daily_recap(request, date_str, user_id=None):
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+
+# --- AI Food Logging Views ---
+
+@login_required
+def ai_food_log(request):
+    """Render the AI food logging page."""
+    return render(request, 'tracker/ai_food_log.html')
+
+
+@require_POST
+@login_required
+def ai_parse_food(request):
+    """Process text or image input through AI and return structured data."""
+    try:
+        from .ai_service import AIFoodLogService
+        service = AIFoodLogService()
+
+        # Check if this is a text or image request
+        text_input = request.POST.get('text', '').strip()
+        image_file = request.FILES.get('image')
+
+        if image_file:
+            # Handle image input
+            image_data = image_file.read()
+            content_type = image_file.content_type
+            context = request.POST.get('context', '').strip()
+
+            # Validate file size (max 10MB)
+            if len(image_data) > 10 * 1024 * 1024:
+                return JsonResponse({'success': False, 'error': 'Image too large (max 10MB)'})
+
+            result = service.parse_image_input(image_data, content_type, context)
+        elif text_input:
+            # Handle text input
+            result = service.parse_text_input(text_input)
+        else:
+            return JsonResponse({'success': False, 'error': 'No text or image provided'})
+
+        return JsonResponse(result)
+
+    except ValueError as e:
+        # API key not configured
+        return JsonResponse({'success': False, 'error': str(e)})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'})
+
+
+@require_POST
+@login_required
+def ai_save_food(request):
+    """Save AI-parsed (and user-edited) food data."""
+    try:
+        raw_json = request.POST.get('json_data', '').strip()
+        if not raw_json:
+            return JsonResponse({'success': False, 'error': 'No data provided'})
+
+        data = json.loads(raw_json)
+
+        # Ensure it's in the list format expected by import logic
+        if isinstance(data, dict):
+            data = [data]
+
+        user = request.user
+        dietary_count = 0
+
+        for entry in data:
+            if not isinstance(entry, dict):
+                continue
+
+            date_str = entry.get('date')
+            if not date_str:
+                continue
+
+            try:
+                entry_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            except ValueError:
+                continue
+
+            day_remarks = (entry.get('remarks') or "").strip()
+
+            # Dietary items
+            food_items = entry.get('dietary') or entry.get('food') or []
+            if not isinstance(food_items, list):
+                food_items = []
+
+            for item in food_items:
+                if not isinstance(item, dict):
+                    continue
+
+                item_notes = (item.get('notes') or item.get('note') or "").strip()
+                item_remarks = (item.get('remarks') or "").strip() or day_remarks
+
+                create_kwargs = {
+                    "user": user,
+                    "date": entry_date,
+                    "item": item.get("item", "") or "",
+                    "calories": item.get("calories", 0) or 0,
+                    "notes": item_notes,
+                }
+
+                if hasattr(DietaryEntry, "remarks"):
+                    create_kwargs["remarks"] = item_remarks
+
+                DietaryEntry.objects.create(**create_kwargs)
+                dietary_count += 1
+
+        if dietary_count > 0:
+            return JsonResponse({'success': True, 'message': f'Saved {dietary_count} food item(s).'})
+        else:
+            return JsonResponse({'success': False, 'error': 'No valid food items to save'})
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
