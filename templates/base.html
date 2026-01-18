@@ -18,6 +18,9 @@
         <!-- Right side: buttons + toggler -->
         <div class="d-flex align-items-center gap-1 ms-auto">
           {% if user.is_authenticated %}
+            <a href="{% url 'tracker:ai_food_log' %}" class="btn btn-sm btn-success">
+              <i class="bi bi-robot"></i><span class="d-none d-sm-inline ms-1">AI Log</span>
+            </a>
             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importJsonModal">
               <i class="bi bi-upload"></i><span class="d-none d-sm-inline ms-1">Import</span>
             </button>
