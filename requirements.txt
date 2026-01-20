@@ -1,9 +1,15 @@
-
-Django>=4.2,<5
-python-dateutil>=2.8
-python-dotenv>=1.0
-openai>=1.12.0
-
-# Testing
-pytest>=7.0
-pytest-django>=4.5
+asgiref==3.11.0
+colorama==0.4.6
+Django==4.2.27
+iniconfig==2.3.0
+packaging==25.0
+pluggy==1.6.0
+Pygments==2.19.2
+pypi==2.1
+pytest==9.0.2
+pytest-django==4.11.1
+python-dateutil==2.9.0.post0
+python-dotenv==1.2.1
+six==1.17.0
+sqlparse==0.5.5
+tzdata==2025.3
