@@ -17,6 +17,7 @@ urlpatterns = [
     path('ai/', views.ai_food_log, name='ai_food_log'),
     path('ai/parse/', views.ai_parse_food, name='ai_parse_food'),
     path('ai/save/', views.ai_save_food, name='ai_save_food'),
+    path('ai/quota/', views.ai_quota_status, name='ai_quota_status'),
 
     # Delete entry URLs
     path('delete-dietary/<int:entry_id>/', views.delete_dietary_entry, name='delete_dietary_entry'),
