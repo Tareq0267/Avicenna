@@ -320,7 +320,7 @@ def add_weight(request):
         if not weight_kg:
             return JsonResponse({'success': False, 'error': 'Weight is required'})
         user = request.user
-        entry_date = datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else timezone.now().date()
+        entry_date = datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else timezone.localtime().date()
         WeightEntry.objects.create(
             user=user,
             date=entry_date,

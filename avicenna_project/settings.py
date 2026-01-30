@@ -16,9 +16,6 @@ DEBUG = True  # Set to False in production
 # SECURE_BROWSER_XSS_FILTER = True
 # SECURE_CONTENT_TYPE_NOSNIFF = True
 
-TIME_ZONE = "Asia/Kuala_Lumpur"
-USE_TZ = True
-
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost','cybilcut.pythonanywhere.com']
 
 # For ngrok testing - allows CSRF to work with ngrok URLs
@@ -96,7 +93,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kuala_Lumpur'
 
 USE_I18N = True
 
