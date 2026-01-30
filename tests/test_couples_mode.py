@@ -1,15 +1,14 @@
 """
 Tests for Couples Mode functionality.
 """
-import pytest
 import json
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
 
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 
-from tracker.models import DietaryEntry, ExerciseEntry, WeightEntry, UserProfile
+from tracker.models import DietaryEntry, WeightEntry
 
 User = get_user_model()
 

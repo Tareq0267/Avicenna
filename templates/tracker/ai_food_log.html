@@ -1,0 +1,1104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="ai-wrapper">
+  <div class="ai-container">
+
+    <!-- Hero Section -->
+    <div class="ai-hero">
+      <div class="hero-icon">
+        <i class="bi bi-robot"></i>
+      </div>
+      <h1>AI Food Logger</h1>
+      <p class="lead">Describe your meals or snap a photo - AI handles the rest</p>
+    </div>
+
+    <!-- Quota Display -->
+    <div class="quota-section" id="quotaSection">
+      <div class="quota-info">
+        <span class="quota-label">
+          <i class="bi bi-lightning-charge-fill me-1"></i>Today:
+        </span>
+        <span class="quota-value" id="quotaDaily">-/-</span>
+      </div>
+      <div class="quota-info">
+        <span class="quota-label">
+          <i class="bi bi-calendar-month me-1"></i>This Month:
+        </span>
+        <span class="quota-value" id="quotaMonthly">-/-</span>
+      </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="ai-tabs">
+      <button class="ai-tab active" data-tab="text" onclick="switchTab('text')">
+        <i class="bi bi-chat-text me-2"></i>Text
+      </button>
+      <button class="ai-tab" data-tab="image" onclick="switchTab('image')">
+        <i class="bi bi-camera me-2"></i>Photo
+      </button>
+    </div>
+
+    <!-- Text Input Tab -->
+    <div class="ai-tab-content active" id="tab-text">
+      <div class="input-section">
+        <label for="foodText" class="input-label">
+          <i class="bi bi-chat-dots me-2"></i>What did you eat?
+        </label>
+        <textarea
+          id="foodText"
+          class="ai-textarea"
+          rows="4"
+          placeholder="e.g., I had nasi lemak for breakfast with teh tarik, then chicken rice for lunch..."
+        ></textarea>
+        <button class="btn btn-primary btn-analyze" onclick="analyzeText()" id="analyzeTextBtn">
+          <i class="bi bi-magic me-2"></i>Analyze with AI
+        </button>
+      </div>
+    </div>
+
+    <!-- Image Input Tab -->
+    <div class="ai-tab-content" id="tab-image">
+      <div class="input-section">
+        <label class="input-label">
+          <i class="bi bi-image me-2"></i>Upload Food Photo
+        </label>
+
+        <div class="upload-area" id="uploadArea" onclick="document.getElementById('foodImage').click()">
+          <input type="file" id="foodImage" accept="image/*" capture="environment" hidden onchange="previewImage(this)">
+          <div class="upload-placeholder" id="uploadPlaceholder">
+            <i class="bi bi-cloud-arrow-up"></i>
+            <p>Click to take photo or upload</p>
+            <span>Camera or Gallery • Max 10MB</span>
+          </div>
+          <div class="upload-preview" id="uploadPreview" style="display: none;">
+            <img id="imagePreviewImg" src="" alt="Preview">
+            <button type="button" class="btn btn-sm btn-outline-danger remove-image" onclick="removeImage(event)">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <label for="imageContext" class="input-label mt-3">
+          <i class="bi bi-info-circle me-2"></i>Additional context (optional)
+        </label>
+        <input
+          type="text"
+          id="imageContext"
+          class="form-control"
+          placeholder="e.g., This was my lunch, large portion..."
+        >
+
+        <button class="btn btn-primary btn-analyze" onclick="analyzeImage()" id="analyzeImageBtn">
+          <i class="bi bi-magic me-2"></i>Analyze Photo
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-section" id="loadingSection" style="display: none;">
+      <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>AI is analyzing your food...</p>
+      </div>
+    </div>
+
+    <!-- Error Display -->
+    <div class="alert alert-danger error-section" id="errorSection" style="display: none;">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      <span id="errorMessage"></span>
+    </div>
+
+    <!-- Preview/Edit Section -->
+    <div class="preview-section" id="previewSection" style="display: none;">
+      <div class="preview-header">
+        <h3><i class="bi bi-pencil-square me-2"></i>Review & Edit</h3>
+        <p class="text-muted">Adjust any values before saving</p>
+      </div>
+
+      <div class="preview-form">
+        <!-- Date -->
+        <div class="form-group mb-3">
+          <label for="entryDate" class="form-label">
+            <i class="bi bi-calendar me-2"></i>Date
+          </label>
+          <input type="date" id="entryDate" class="form-control">
+        </div>
+
+        <!-- Remarks -->
+        <div class="form-group mb-3">
+          <label for="entryRemarks" class="form-label">
+            <i class="bi bi-chat-left-text me-2"></i>Remarks (optional)
+          </label>
+          <input type="text" id="entryRemarks" class="form-control" placeholder="e.g., Breakfast, Lunch, Dinner...">
+        </div>
+
+        <!-- Food Items -->
+        <div class="food-items-section">
+          <div class="section-header">
+            <label class="form-label mb-0">
+              <i class="bi bi-egg-fried me-2"></i>Food Items
+            </label>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addFoodItem()">
+              <i class="bi bi-plus"></i> Add Item
+            </button>
+          </div>
+          <div id="foodItemsContainer">
+            <!-- Food items will be added here dynamically -->
+          </div>
+        </div>
+
+        <!-- Exercise Items -->
+        <div class="food-items-section" id="exerciseSection" style="display: none;">
+          <div class="section-header">
+            <label class="form-label mb-0">
+              <i class="bi bi-lightning-fill me-2"></i>Exercise
+            </label>
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="addExerciseItem()">
+              <i class="bi bi-plus"></i> Add Exercise
+            </button>
+          </div>
+          <div id="exerciseItemsContainer">
+            <!-- Exercise items will be added here dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="preview-actions">
+        <button type="button" class="btn btn-outline-secondary" onclick="cancelPreview()">
+          <i class="bi bi-x-lg me-2"></i>Cancel
+        </button>
+        <button type="button" class="btn btn-success" onclick="saveFoodData()" id="saveBtn">
+          <i class="bi bi-check-lg me-2"></i>Save to Tracker
+        </button>
+      </div>
+    </div>
+
+    <!-- Success Message -->
+    <div class="success-section" id="successSection" style="display: none;">
+      <div class="success-content">
+        <div class="success-icon">
+          <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <h3>Saved Successfully!</h3>
+        <p id="successMessage">Your food has been logged.</p>
+        <div class="success-actions">
+          <button class="btn btn-outline-primary" onclick="resetForm()">
+            <i class="bi bi-plus-lg me-2"></i>Log More
+          </button>
+          <a href="{% url 'tracker:dashboard' %}" class="btn btn-primary">
+            <i class="bi bi-grid me-2"></i>Go to Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+.ai-wrapper {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.ai-container {
+  background: var(--card-bg, #fff);
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 24px rgba(99, 102, 241, 0.08);
+  overflow: hidden;
+}
+
+/* Hero */
+.ai-hero {
+  background: linear-gradient(135deg, #10b981, #34d399);
+  color: #fff;
+  text-align: center;
+  padding: 2rem 1.5rem;
+}
+
+.ai-hero .hero-icon {
+  width: 64px;
+  height: 64px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin: 0 auto 1rem;
+}
+
+.ai-hero h1 {
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.ai-hero .lead {
+  opacity: 0.9;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* Quota Section */
+.quota-section {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding: 1rem 1.5rem;
+  background: var(--bg-secondary, #f9fafb);
+  border-bottom: 1px solid var(--border, #e9ecef);
+}
+
+.quota-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.quota-label {
+  font-size: 0.875rem;
+  color: var(--text-muted, #6b7280);
+  font-weight: 500;
+}
+
+.quota-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text, #1f2937);
+  padding: 0.25rem 0.5rem;
+  background: #fff;
+  border-radius: 0.375rem;
+  min-width: 60px;
+  text-align: center;
+}
+
+.quota-value.warning {
+  color: #f59e0b;
+}
+
+.quota-value.danger {
+  color: #ef4444;
+}
+
+/* Tabs */
+.ai-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border, #e9ecef);
+}
+
+.ai-tab {
+  flex: 1;
+  padding: 1rem;
+  background: none;
+  border: none;
+  font-weight: 600;
+  color: var(--text-muted, #6b7280);
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+}
+
+.ai-tab:hover {
+  color: var(--text, #1f2937);
+  background: var(--bg-secondary, #f9fafb);
+}
+
+.ai-tab.active {
+  color: #10b981;
+  border-bottom-color: #10b981;
+}
+
+/* Tab Content */
+.ai-tab-content {
+  display: none;
+  padding: 1.5rem;
+}
+
+.ai-tab-content.active {
+  display: block;
+}
+
+.input-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-label {
+  font-weight: 600;
+  color: var(--text, #1f2937);
+  margin-bottom: 0.5rem;
+}
+
+.ai-textarea {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid var(--border, #e5e7eb);
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.ai-textarea:focus {
+  outline: none;
+  border-color: #10b981;
+}
+
+.btn-analyze {
+  margin-top: 1rem;
+  padding: 0.875rem 1.5rem;
+  font-weight: 600;
+  border-radius: 0.75rem;
+}
+
+/* Upload Area */
+.upload-area {
+  border: 2px dashed var(--border, #d1d5db);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg-secondary, #f9fafb);
+  position: relative;
+}
+
+.upload-area:hover {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.upload-area.has-image {
+  padding: 0;
+  border-style: solid;
+}
+
+.upload-placeholder i {
+  font-size: 3rem;
+  color: #9ca3af;
+  margin-bottom: 0.5rem;
+}
+
+.upload-placeholder p {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text, #1f2937);
+}
+
+.upload-placeholder span {
+  font-size: 0.85rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.upload-preview {
+  position: relative;
+}
+
+.upload-preview img {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 0.75rem;
+}
+
+.remove-image {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Loading */
+.loading-section {
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.loading-spinner p {
+  margin: 0;
+  color: var(--text-muted, #6b7280);
+  font-weight: 500;
+}
+
+/* Error */
+.error-section {
+  margin: 1rem 1.5rem;
+  border-radius: 0.75rem;
+}
+
+/* Preview Section */
+.preview-section {
+  padding: 1.5rem;
+  border-top: 1px solid var(--border, #e9ecef);
+  background: var(--bg-secondary, #f9fafb);
+}
+
+.preview-header {
+  margin-bottom: 1.5rem;
+}
+
+.preview-header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.preview-header p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.preview-form {
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.food-items-section {
+  margin-top: 1rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+/* Food Item Card */
+.food-item-card {
+  background: var(--bg-secondary, #f9fafb);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.food-item-card .form-control {
+  background: #fff;
+}
+
+.food-item-row {
+  display: grid;
+  grid-template-columns: 1fr 100px;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.food-item-notes {
+  margin-top: 0.5rem;
+}
+
+.remove-food-item {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 0.25rem;
+  font-size: 1rem;
+  opacity: 0.7;
+}
+
+.remove-food-item:hover {
+  opacity: 1;
+}
+
+/* Preview Actions */
+.preview-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.preview-actions .btn {
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  border-radius: 0.75rem;
+}
+
+/* Success */
+.success-section {
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.success-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.success-icon {
+  width: 64px;
+  height: 64px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #10b981;
+}
+
+.success-content h3 {
+  font-weight: 700;
+  margin: 0;
+}
+
+.success-content p {
+  color: var(--text-muted, #6b7280);
+  margin: 0;
+}
+
+.success-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.success-actions .btn {
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  border-radius: 0.75rem;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .food-item-row {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-actions {
+    flex-direction: column;
+  }
+
+  .success-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .success-actions .btn {
+    width: 100%;
+  }
+}
+</style>
+
+<script>
+// Load quota information on page load
+document.addEventListener('DOMContentLoaded', function() {
+  loadQuotaInfo();
+});
+
+// Load and display quota information
+async function loadQuotaInfo() {
+  try {
+    const response = await fetch('{% url "tracker:ai_quota_status" %}', {
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}'
+      }
+    });
+    const result = await response.json();
+
+    if (result.success && result.quota) {
+      const quota = result.quota;
+      updateQuotaDisplay(quota);
+    }
+  } catch (err) {
+    console.error('Failed to load quota info:', err);
+  }
+}
+
+// Update quota display
+function updateQuotaDisplay(quota) {
+  const dailyUsed = quota.usage.daily;
+  const dailyLimit = quota.limits.daily;
+  const monthlyUsed = quota.usage.monthly;
+  const monthlyLimit = quota.limits.monthly;
+
+  const dailyRemaining = quota.remaining.daily;
+  const monthlyRemaining = quota.remaining.monthly;
+
+  // Update display
+  const dailyEl = document.getElementById('quotaDaily');
+  const monthlyEl = document.getElementById('quotaMonthly');
+
+  dailyEl.textContent = `${dailyRemaining}/${dailyLimit}`;
+  monthlyEl.textContent = `${monthlyRemaining}/${monthlyLimit}`;
+
+  // Add warning/danger classes
+  dailyEl.classList.remove('warning', 'danger');
+  monthlyEl.classList.remove('warning', 'danger');
+
+  const dailyPercent = quota.percentage_used.daily;
+  const monthlyPercent = quota.percentage_used.monthly;
+
+  if (dailyPercent >= 90) {
+    dailyEl.classList.add('danger');
+  } else if (dailyPercent >= 70) {
+    dailyEl.classList.add('warning');
+  }
+
+  if (monthlyPercent >= 90) {
+    monthlyEl.classList.add('danger');
+  } else if (monthlyPercent >= 70) {
+    monthlyEl.classList.add('warning');
+  }
+}
+
+// Update quota from API response (simplified version)
+function updateQuotaFromResponse(remaining) {
+  const dailyEl = document.getElementById('quotaDaily');
+  const monthlyEl = document.getElementById('monthlyDaily');
+
+  if (remaining.daily_remaining !== undefined) {
+    // Reload full quota info to get accurate counts
+    loadQuotaInfo();
+  }
+}
+
+// Tab switching
+function switchTab(tabName) {
+  // Update tab buttons
+  document.querySelectorAll('.ai-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.tab === tabName);
+  });
+
+  // Update tab content
+  document.querySelectorAll('.ai-tab-content').forEach(content => {
+    content.classList.toggle('active', content.id === 'tab-' + tabName);
+  });
+
+  // Hide preview/error when switching tabs
+  hidePreview();
+  hideError();
+}
+
+// Image preview
+function previewImage(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('imagePreviewImg').src = e.target.result;
+      document.getElementById('uploadPlaceholder').style.display = 'none';
+      document.getElementById('uploadPreview').style.display = 'block';
+      document.getElementById('uploadArea').classList.add('has-image');
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function removeImage(event) {
+  event.stopPropagation();
+  document.getElementById('foodImage').value = '';
+  document.getElementById('uploadPlaceholder').style.display = 'block';
+  document.getElementById('uploadPreview').style.display = 'none';
+  document.getElementById('uploadArea').classList.remove('has-image');
+}
+
+// Show/hide helpers
+function showLoading() {
+  document.getElementById('loadingSection').style.display = 'block';
+  document.getElementById('previewSection').style.display = 'none';
+  document.getElementById('errorSection').style.display = 'none';
+  document.getElementById('successSection').style.display = 'none';
+}
+
+function hideLoading() {
+  document.getElementById('loadingSection').style.display = 'none';
+}
+
+function showError(message) {
+  hideLoading();
+  document.getElementById('errorMessage').textContent = message;
+  document.getElementById('errorSection').style.display = 'block';
+}
+
+function hideError() {
+  document.getElementById('errorSection').style.display = 'none';
+}
+
+function showPreview(data) {
+  hideLoading();
+  hideError();
+  document.getElementById('previewSection').style.display = 'block';
+
+  // Set date
+  document.getElementById('entryDate').value = data.date || new Date().toISOString().split('T')[0];
+
+  // Set remarks
+  document.getElementById('entryRemarks').value = data.remarks || '';
+
+  // Populate food items
+  const container = document.getElementById('foodItemsContainer');
+  container.innerHTML = '';
+
+  const items = data.dietary || data.food || [];
+  items.forEach((item, index) => {
+    addFoodItemToDOM(item.item || '', item.calories || 0, item.notes || item.note || '');
+  });
+
+  // Add at least one empty item if none exist
+  if (items.length === 0) {
+    addFoodItem();
+  }
+
+  // Populate exercise items
+  const exerciseContainer = document.getElementById('exerciseItemsContainer');
+  exerciseContainer.innerHTML = '';
+
+  const exercises = data.exercise || [];
+  exercises.forEach((ex) => {
+    addExerciseItemToDOM(
+      ex.activity || '',
+      ex.duration_minutes || ex.duration_min || 0,
+      ex.calories_burned || 0,
+      ex.remarks || ''
+    );
+  });
+
+  // Show exercise section if there are exercises
+  const exerciseSection = document.getElementById('exerciseSection');
+  if (exercises.length > 0) {
+    exerciseSection.style.display = 'block';
+  } else {
+    exerciseSection.style.display = 'none';
+  }
+}
+
+function hidePreview() {
+  document.getElementById('previewSection').style.display = 'none';
+}
+
+function cancelPreview() {
+  hidePreview();
+}
+
+function showSuccess(message) {
+  document.getElementById('successMessage').textContent = message;
+  document.getElementById('successSection').style.display = 'block';
+  document.getElementById('previewSection').style.display = 'none';
+  // Hide input sections
+  document.querySelectorAll('.ai-tab-content').forEach(el => el.style.display = 'none');
+  document.querySelector('.ai-tabs').style.display = 'none';
+}
+
+// Food item management
+function addFoodItem() {
+  addFoodItemToDOM('', 0, '');
+}
+
+function addFoodItemToDOM(itemName, calories, notes) {
+  const container = document.getElementById('foodItemsContainer');
+  const index = container.children.length;
+
+  const card = document.createElement('div');
+  card.className = 'food-item-card';
+  card.innerHTML = `
+    <button type="button" class="remove-food-item" onclick="removeFoodItem(this)">
+      <i class="bi bi-x-lg"></i>
+    </button>
+    <div class="food-item-row">
+      <div>
+        <label class="form-label small">Food Item</label>
+        <input type="text" class="form-control food-item-name" value="${escapeHtml(itemName)}" placeholder="e.g., Nasi Lemak">
+      </div>
+      <div>
+        <label class="form-label small">Calories</label>
+        <input type="number" class="form-control food-item-calories" value="${calories}" min="0">
+      </div>
+    </div>
+    <div class="food-item-notes">
+      <label class="form-label small">Notes (optional)</label>
+      <input type="text" class="form-control food-item-notes-input" value="${escapeHtml(notes)}" placeholder="e.g., with sambal">
+    </div>
+  `;
+
+  container.appendChild(card);
+}
+
+function removeFoodItem(button) {
+  const card = button.closest('.food-item-card');
+  card.remove();
+}
+
+// Exercise item management
+function addExerciseItem() {
+  document.getElementById('exerciseSection').style.display = 'block';
+  addExerciseItemToDOM('', 0, 0, '');
+}
+
+function addExerciseItemToDOM(activity, durationMinutes, caloriesBurned, remarks) {
+  const container = document.getElementById('exerciseItemsContainer');
+
+  const card = document.createElement('div');
+  card.className = 'food-item-card';
+  card.innerHTML = `
+    <button type="button" class="remove-food-item" onclick="removeExerciseItem(this)">
+      <i class="bi bi-x-lg"></i>
+    </button>
+    <div class="food-item-row">
+      <div>
+        <label class="form-label small">Activity</label>
+        <input type="text" class="form-control exercise-activity" value="${escapeHtml(activity)}" placeholder="e.g., Running, Cycling">
+      </div>
+      <div>
+        <label class="form-label small">Minutes</label>
+        <input type="number" class="form-control exercise-duration" value="${durationMinutes}" min="0">
+      </div>
+    </div>
+    <div class="food-item-row" style="margin-top: 0.5rem;">
+      <div>
+        <label class="form-label small">Calories Burned</label>
+        <input type="number" class="form-control exercise-calories" value="${caloriesBurned}" min="0">
+      </div>
+      <div>
+        <label class="form-label small">Notes (optional)</label>
+        <input type="text" class="form-control exercise-remarks" value="${escapeHtml(remarks)}" placeholder="e.g., Intense">
+      </div>
+    </div>
+  `;
+
+  container.appendChild(card);
+}
+
+function removeExerciseItem(button) {
+  const card = button.closest('.food-item-card');
+  card.remove();
+
+  // Hide section if no exercises left
+  const container = document.getElementById('exerciseItemsContainer');
+  if (container.children.length === 0) {
+    document.getElementById('exerciseSection').style.display = 'none';
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Collect edited data
+function collectFoodData() {
+  const items = [];
+  document.querySelectorAll('#foodItemsContainer .food-item-card').forEach(card => {
+    const name = card.querySelector('.food-item-name').value.trim();
+    const calories = parseInt(card.querySelector('.food-item-calories').value) || 0;
+    const notes = card.querySelector('.food-item-notes-input').value.trim();
+
+    if (name) {
+      items.push({
+        item: name,
+        calories: calories,
+        notes: notes
+      });
+    }
+  });
+
+  // Collect exercise data
+  const exercises = [];
+  document.querySelectorAll('#exerciseItemsContainer .food-item-card').forEach(card => {
+    const activity = card.querySelector('.exercise-activity').value.trim();
+    const duration = parseInt(card.querySelector('.exercise-duration').value) || 0;
+    const calories = parseInt(card.querySelector('.exercise-calories').value) || 0;
+    const remarks = card.querySelector('.exercise-remarks').value.trim();
+
+    if (activity) {
+      exercises.push({
+        activity: activity,
+        duration_minutes: duration,
+        calories_burned: calories,
+        remarks: remarks
+      });
+    }
+  });
+
+  return {
+    date: document.getElementById('entryDate').value,
+    remarks: document.getElementById('entryRemarks').value.trim(),
+    dietary: items,
+    exercise: exercises
+  };
+}
+
+// API calls
+async function analyzeText() {
+  const text = document.getElementById('foodText').value.trim();
+  if (!text) {
+    showError('Please enter what you ate');
+    return;
+  }
+
+  showLoading();
+  document.getElementById('analyzeTextBtn').disabled = true;
+
+  try {
+    const formData = new FormData();
+    formData.append('text', text);
+
+    const response = await fetch('{% url "tracker:ai_parse_food" %}', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}'
+      }
+    });
+
+    const result = await response.json();
+
+    // Update quota display if provided
+    if (result.remaining) {
+      updateQuotaFromResponse(result.remaining);
+    }
+
+    if (result.success) {
+      showPreview(result.data);
+    } else {
+      // Check if it's a rate limit error
+      if (result.rate_limit && response.status === 429) {
+        showError('⏰ ' + result.error);
+      } else {
+        showError(result.error || 'Failed to analyze text');
+      }
+    }
+  } catch (err) {
+    showError('Request failed: ' + err.message);
+  } finally {
+    document.getElementById('analyzeTextBtn').disabled = false;
+  }
+}
+
+async function analyzeImage() {
+  const fileInput = document.getElementById('foodImage');
+  if (!fileInput.files || !fileInput.files[0]) {
+    showError('Please select an image first');
+    return;
+  }
+
+  showLoading();
+  document.getElementById('analyzeImageBtn').disabled = true;
+
+  try {
+    const formData = new FormData();
+    formData.append('image', fileInput.files[0]);
+    formData.append('context', document.getElementById('imageContext').value);
+
+    const response = await fetch('{% url "tracker:ai_parse_food" %}', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}'
+      }
+    });
+
+    const result = await response.json();
+
+    // Update quota display if provided
+    if (result.remaining) {
+      updateQuotaFromResponse(result.remaining);
+    }
+
+    if (result.success) {
+      showPreview(result.data);
+    } else {
+      // Check if it's a rate limit error
+      if (result.rate_limit && response.status === 429) {
+        showError('⏰ ' + result.error);
+      } else {
+        showError(result.error || 'Failed to analyze image');
+      }
+    }
+  } catch (err) {
+    showError('Request failed: ' + err.message);
+  } finally {
+    document.getElementById('analyzeImageBtn').disabled = false;
+  }
+}
+
+async function saveFoodData() {
+  const data = collectFoodData();
+
+  const hasDietary = data.dietary && data.dietary.length > 0;
+  const hasExercise = data.exercise && data.exercise.length > 0;
+
+  if (!hasDietary && !hasExercise) {
+    showError('Please add at least one food item or exercise');
+    return;
+  }
+
+  document.getElementById('saveBtn').disabled = true;
+
+  try {
+    const formData = new FormData();
+    formData.append('json_data', JSON.stringify(data));
+
+    const response = await fetch('{% url "tracker:ai_save_food" %}', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}'
+      }
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      showSuccess(result.message);
+    } else {
+      showError(result.error || 'Failed to save');
+    }
+  } catch (err) {
+    showError('Request failed: ' + err.message);
+  } finally {
+    document.getElementById('saveBtn').disabled = false;
+  }
+}
+
+function resetForm() {
+  // Reset form fields
+  document.getElementById('foodText').value = '';
+  document.getElementById('foodImage').value = '';
+  document.getElementById('imageContext').value = '';
+  document.getElementById('uploadPlaceholder').style.display = 'block';
+  document.getElementById('uploadPreview').style.display = 'none';
+  document.getElementById('uploadArea').classList.remove('has-image');
+
+  // Show tabs and input sections
+  document.querySelector('.ai-tabs').style.display = 'flex';
+  document.querySelectorAll('.ai-tab-content').forEach(el => el.style.display = 'none');
+  document.querySelector('.ai-tab-content').style.display = 'block';
+
+  // Hide other sections
+  document.getElementById('successSection').style.display = 'none';
+  document.getElementById('previewSection').style.display = 'none';
+  document.getElementById('errorSection').style.display = 'none';
+
+  // Reset tabs
+  switchTab('text');
+}
+</script>
+{% endblock %}

@@ -12,11 +12,15 @@ from django.urls import reverse
 
 class TestDashboardTemplateContent:
     """Tests for dashboard template content."""
-    
+
+    @pytest.fixture(autouse=True)
+    def login(self, client, user):
+        client.login(username='testuser', password='testpass123')
+        self.client = client
+
     @pytest.fixture
-    def response(self, client, db):
-        """Get dashboard response."""
-        return client.get(reverse('tracker:dashboard'))
+    def response(self, db):
+        return self.client.get(reverse('tracker:dashboard'))
     
     def test_dashboard_contains_title(self, response):
         """Test dashboard contains page title."""
@@ -70,18 +74,18 @@ class TestDashboardTemplateContent:
 
 class TestTemplateInheritance:
     """Tests for template inheritance structure."""
-    
-    def test_dashboard_extends_base(self, client, db):
+
+    def test_dashboard_extends_base(self, authenticated_client, db):
         """Test dashboard template extends base template."""
-        response = client.get(reverse('tracker:dashboard'))
+        response = authenticated_client.get(reverse('tracker:dashboard'))
         # Base template should provide common elements
         content = response.content.decode('utf-8')
         assert '<html' in content
         assert '</html>' in content
-    
-    def test_base_template_has_navigation(self, client, db):
+
+    def test_base_template_has_navigation(self, authenticated_client, db):
         """Test base template includes navigation."""
-        response = client.get(reverse('tracker:dashboard'))
+        response = authenticated_client.get(reverse('tracker:dashboard'))
         content = response.content.decode('utf-8')
         assert 'nav' in content.lower() or 'navbar' in content.lower()
 
@@ -92,21 +96,21 @@ class TestTemplateInheritance:
 
 class TestModals:
     """Tests for modal dialogs in templates."""
-    
-    def test_import_modal_exists(self, client, db):
+
+    def test_import_modal_exists(self, authenticated_client, db):
         """Test import JSON modal is present."""
-        response = client.get(reverse('tracker:dashboard'))
+        response = authenticated_client.get(reverse('tracker:dashboard'))
         content = response.content.decode('utf-8')
         assert 'importJsonModal' in content or 'import' in content.lower()
-    
-    def test_weight_modal_exists(self, client, db):
+
+    def test_weight_modal_exists(self, authenticated_client, db):
         """Test add weight modal is present."""
-        response = client.get(reverse('tracker:dashboard'))
+        response = authenticated_client.get(reverse('tracker:dashboard'))
         content = response.content.decode('utf-8')
         assert 'addWeightModal' in content or 'weight' in content.lower()
-    
-    def test_daily_recap_modal_exists(self, client, db):
+
+    def test_daily_recap_modal_exists(self, authenticated_client, db):
         """Test daily recap modal is present."""
-        response = client.get(reverse('tracker:dashboard'))
+        response = authenticated_client.get(reverse('tracker:dashboard'))
         content = response.content.decode('utf-8')
         assert 'dailyRecapModal' in content or 'recap' in content.lower()

@@ -107,3 +107,8 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# AI Food Logging Rate Limits (to protect API costs)
+AI_HOURLY_LIMIT = 2    # Requests per hour per user
+AI_DAILY_LIMIT = 10     # Requests per day per user
+AI_MONTHLY_LIMIT = 30  # Requests per month per user
