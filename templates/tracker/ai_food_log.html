@@ -65,11 +65,11 @@
         </label>
 
         <div class="upload-area" id="uploadArea" onclick="document.getElementById('foodImage').click()">
-          <input type="file" id="foodImage" accept="image/jpeg,image/png,image/webp,image/gif" hidden onchange="previewImage(this)">
+          <input type="file" id="foodImage" accept="image/*" capture="environment" hidden onchange="previewImage(this)">
           <div class="upload-placeholder" id="uploadPlaceholder">
             <i class="bi bi-cloud-arrow-up"></i>
-            <p>Click or drag to upload</p>
-            <span>JPG, PNG, WebP (max 10MB)</span>
+            <p>Click to take photo or upload</p>
+            <span>Camera or Gallery • Max 10MB</span>
           </div>
           <div class="upload-preview" id="uploadPreview" style="display: none;">
             <img id="imagePreviewImg" src="" alt="Preview">
@@ -147,6 +147,21 @@
           </div>
           <div id="foodItemsContainer">
             <!-- Food items will be added here dynamically -->
+          </div>
+        </div>
+
+        <!-- Exercise Items -->
+        <div class="food-items-section" id="exerciseSection" style="display: none;">
+          <div class="section-header">
+            <label class="form-label mb-0">
+              <i class="bi bi-lightning-fill me-2"></i>Exercise
+            </label>
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="addExerciseItem()">
+              <i class="bi bi-plus"></i> Add Exercise
+            </button>
+          </div>
+          <div id="exerciseItemsContainer">
+            <!-- Exercise items will be added here dynamically -->
           </div>
         </div>
       </div>
@@ -750,6 +765,28 @@ function showPreview(data) {
   if (items.length === 0) {
     addFoodItem();
   }
+
+  // Populate exercise items
+  const exerciseContainer = document.getElementById('exerciseItemsContainer');
+  exerciseContainer.innerHTML = '';
+
+  const exercises = data.exercise || [];
+  exercises.forEach((ex) => {
+    addExerciseItemToDOM(
+      ex.activity || '',
+      ex.duration_minutes || ex.duration_min || 0,
+      ex.calories_burned || 0,
+      ex.remarks || ''
+    );
+  });
+
+  // Show exercise section if there are exercises
+  const exerciseSection = document.getElementById('exerciseSection');
+  if (exercises.length > 0) {
+    exerciseSection.style.display = 'block';
+  } else {
+    exerciseSection.style.display = 'none';
+  }
 }
 
 function hidePreview() {
@@ -808,6 +845,57 @@ function removeFoodItem(button) {
   card.remove();
 }
 
+// Exercise item management
+function addExerciseItem() {
+  document.getElementById('exerciseSection').style.display = 'block';
+  addExerciseItemToDOM('', 0, 0, '');
+}
+
+function addExerciseItemToDOM(activity, durationMinutes, caloriesBurned, remarks) {
+  const container = document.getElementById('exerciseItemsContainer');
+
+  const card = document.createElement('div');
+  card.className = 'food-item-card';
+  card.innerHTML = `
+    <button type="button" class="remove-food-item" onclick="removeExerciseItem(this)">
+      <i class="bi bi-x-lg"></i>
+    </button>
+    <div class="food-item-row">
+      <div>
+        <label class="form-label small">Activity</label>
+        <input type="text" class="form-control exercise-activity" value="${escapeHtml(activity)}" placeholder="e.g., Running, Cycling">
+      </div>
+      <div>
+        <label class="form-label small">Minutes</label>
+        <input type="number" class="form-control exercise-duration" value="${durationMinutes}" min="0">
+      </div>
+    </div>
+    <div class="food-item-row" style="margin-top: 0.5rem;">
+      <div>
+        <label class="form-label small">Calories Burned</label>
+        <input type="number" class="form-control exercise-calories" value="${caloriesBurned}" min="0">
+      </div>
+      <div>
+        <label class="form-label small">Notes (optional)</label>
+        <input type="text" class="form-control exercise-remarks" value="${escapeHtml(remarks)}" placeholder="e.g., Intense">
+      </div>
+    </div>
+  `;
+
+  container.appendChild(card);
+}
+
+function removeExerciseItem(button) {
+  const card = button.closest('.food-item-card');
+  card.remove();
+
+  // Hide section if no exercises left
+  const container = document.getElementById('exerciseItemsContainer');
+  if (container.children.length === 0) {
+    document.getElementById('exerciseSection').style.display = 'none';
+  }
+}
+
 function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
@@ -817,7 +905,7 @@ function escapeHtml(text) {
 // Collect edited data
 function collectFoodData() {
   const items = [];
-  document.querySelectorAll('.food-item-card').forEach(card => {
+  document.querySelectorAll('#foodItemsContainer .food-item-card').forEach(card => {
     const name = card.querySelector('.food-item-name').value.trim();
     const calories = parseInt(card.querySelector('.food-item-calories').value) || 0;
     const notes = card.querySelector('.food-item-notes-input').value.trim();
@@ -831,10 +919,29 @@ function collectFoodData() {
     }
   });
 
+  // Collect exercise data
+  const exercises = [];
+  document.querySelectorAll('#exerciseItemsContainer .food-item-card').forEach(card => {
+    const activity = card.querySelector('.exercise-activity').value.trim();
+    const duration = parseInt(card.querySelector('.exercise-duration').value) || 0;
+    const calories = parseInt(card.querySelector('.exercise-calories').value) || 0;
+    const remarks = card.querySelector('.exercise-remarks').value.trim();
+
+    if (activity) {
+      exercises.push({
+        activity: activity,
+        duration_minutes: duration,
+        calories_burned: calories,
+        remarks: remarks
+      });
+    }
+  });
+
   return {
     date: document.getElementById('entryDate').value,
     remarks: document.getElementById('entryRemarks').value.trim(),
-    dietary: items
+    dietary: items,
+    exercise: exercises
   };
 }
 
@@ -935,8 +1042,11 @@ async function analyzeImage() {
 async function saveFoodData() {
   const data = collectFoodData();
 
-  if (!data.dietary || data.dietary.length === 0) {
-    showError('Please add at least one food item');
+  const hasDietary = data.dietary && data.dietary.length > 0;
+  const hasExercise = data.exercise && data.exercise.length > 0;
+
+  if (!hasDietary && !hasExercise) {
+    showError('Please add at least one food item or exercise');
     return;
   }
 
