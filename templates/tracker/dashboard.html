@@ -342,14 +342,15 @@ document.addEventListener('DOMContentLoaded', function() {
   
   function updateHeatmapRange() {
     const today = new Date(todayStr);
-    
+
     // Calculate start date based on offset
     const startMonth = new Date(today.getFullYear(), today.getMonth() + heatmapOffset, 1);
     const endMonth = new Date(startMonth.getFullYear(), startMonth.getMonth() + monthsToShow - 1, 1);
     const endDate = new Date(endMonth.getFullYear(), endMonth.getMonth() + 1, 0); // Last day of end month
-    
-    const rangeStartStr = startMonth.toISOString().split('T')[0];
-    const rangeEndStr = endDate.toISOString().split('T')[0];
+
+    // Build date strings without timezone conversion
+    const rangeStartStr = `${startMonth.getFullYear()}-${String(startMonth.getMonth() + 1).padStart(2, '0')}-01`;
+    const rangeEndStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
     
     // Update range label
     const rangeLabel = document.getElementById('heatmapRange');
@@ -358,13 +359,30 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       rangeLabel.textContent = getMonthName(startMonth) + ' - ' + getMonthName(endMonth);
     }
-    
-    // Generate data for this range
+
+    // Generate data for this range - explicitly create entry for each day in month
     const rangeData = [];
-    for (let d = new Date(startMonth); d <= endDate; d.setDate(d.getDate() + 1)) {
-      const dateStr = d.toISOString().split('T')[0];
-      const count = activityMap[dateStr] || 0;
-      rangeData.push([dateStr, count]);
+    const targetYear = startMonth.getFullYear();
+    const targetMonth = startMonth.getMonth();
+
+    // Loop through each day of the target month(s)
+    for (let m = 0; m < monthsToShow; m++) {
+      // Use Date object to handle month/year rollovers correctly
+      const monthDate = new Date(targetYear, targetMonth + m, 1);
+      const year = monthDate.getFullYear();
+      const month = monthDate.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        // Build date string directly to avoid timezone conversion issues
+        const yearStr = String(year);
+        const monthStr = String(month + 1).padStart(2, '0');
+        const dayStr = String(day).padStart(2, '0');
+        const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
+
+        const count = activityMap[dateStr] || 0;
+        rangeData.push([dateStr, count]);
+      }
     }
     
     // Check if today is in this range for highlighting
