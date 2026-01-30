@@ -411,6 +411,22 @@ def ai_food_log(request):
 @login_required
 def ai_parse_food(request):
     """Process text or image input through AI and return structured data."""
+    from .rate_limit import ai_rate_limit, log_ai_usage
+
+    # Apply rate limiting manually (since we need to log usage after)
+    from .rate_limit import check_rate_limit
+    allowed, error_msg, remaining = check_rate_limit(request.user)
+
+    if not allowed:
+        return JsonResponse({
+            'success': False,
+            'error': error_msg,
+            'rate_limit': True,
+            'remaining': remaining
+        }, status=429)
+
+    request_type = 'image' if request.FILES.get('image') else 'text'
+
     try:
         from .ai_service import AIFoodLogService
         service = AIFoodLogService()
@@ -427,6 +443,7 @@ def ai_parse_food(request):
 
             # Validate file size (max 10MB)
             if len(image_data) > 10 * 1024 * 1024:
+                log_ai_usage(request.user, request_type, success=False, error_message='Image too large')
                 return JsonResponse({'success': False, 'error': 'Image too large (max 10MB)'})
 
             result = service.parse_image_input(image_data, content_type, context)
@@ -436,12 +453,25 @@ def ai_parse_food(request):
         else:
             return JsonResponse({'success': False, 'error': 'No text or image provided'})
 
+        # Log usage
+        log_ai_usage(
+            request.user,
+            request_type,
+            success=result.get('success', False),
+            error_message=result.get('error', '') if not result.get('success') else ''
+        )
+
+        # Add remaining quota to response
+        result['remaining'] = remaining
+
         return JsonResponse(result)
 
     except ValueError as e:
         # API key not configured
+        log_ai_usage(request.user, request_type, success=False, error_message=str(e))
         return JsonResponse({'success': False, 'error': str(e)})
     except Exception as e:
+        log_ai_usage(request.user, request_type, success=False, error_message=str(e))
         return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'})
 
 
@@ -513,3 +543,15 @@ def ai_save_food(request):
         return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+def ai_quota_status(request):
+    """Get user's current AI quota status."""
+    from .rate_limit import get_user_quota_info
+
+    quota_info = get_user_quota_info(request.user)
+    return JsonResponse({
+        'success': True,
+        'quota': quota_info
+    })

@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth import get_user_model
-from .models import DietaryEntry, ExerciseEntry, WeightEntry, UserProfile
+from django.utils.html import format_html
+from .models import DietaryEntry, ExerciseEntry, WeightEntry, UserProfile, AIUsage
 
 User = get_user_model()
 
@@ -46,3 +47,33 @@ class ExerciseEntryAdmin(admin.ModelAdmin):
 class WeightEntryAdmin(admin.ModelAdmin):
     list_display = ('user', 'date', 'weight_kg')
     list_filter = ('date', 'user')
+
+
+@admin.register(AIUsage)
+class AIUsageAdmin(admin.ModelAdmin):
+    list_display = ('user', 'timestamp', 'request_type', 'success_badge', 'tokens_used')
+    list_filter = ('request_type', 'success', 'timestamp')
+    search_fields = ('user__username', 'error_message')
+    readonly_fields = ('user', 'timestamp', 'request_type', 'success', 'error_message', 'tokens_used')
+    date_hierarchy = 'timestamp'
+    ordering = ('-timestamp',)
+
+    def success_badge(self, obj):
+        """Display success status with color badge."""
+        if obj.success:
+            return format_html(
+                '<span style="background-color: #10b981; color: white; padding: 3px 8px; border-radius: 4px;">✓ Success</span>'
+            )
+        else:
+            return format_html(
+                '<span style="background-color: #ef4444; color: white; padding: 3px 8px; border-radius: 4px;">✗ Failed</span>'
+            )
+    success_badge.short_description = 'Status'
+
+    def has_add_permission(self, request):
+        """Prevent manual creation of usage records."""
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        """Make records read-only."""
+        return False

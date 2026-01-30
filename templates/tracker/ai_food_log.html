@@ -13,6 +13,22 @@
       <p class="lead">Describe your meals or snap a photo - AI handles the rest</p>
     </div>
 
+    <!-- Quota Display -->
+    <div class="quota-section" id="quotaSection">
+      <div class="quota-info">
+        <span class="quota-label">
+          <i class="bi bi-lightning-charge-fill me-1"></i>Today:
+        </span>
+        <span class="quota-value" id="quotaDaily">-/-</span>
+      </div>
+      <div class="quota-info">
+        <span class="quota-label">
+          <i class="bi bi-calendar-month me-1"></i>This Month:
+        </span>
+        <span class="quota-value" id="quotaMonthly">-/-</span>
+      </div>
+    </div>
+
     <!-- Tab Navigation -->
     <div class="ai-tabs">
       <button class="ai-tab active" data-tab="text" onclick="switchTab('text')">
@@ -212,6 +228,47 @@
   opacity: 0.9;
   margin: 0;
   font-size: 0.95rem;
+}
+
+/* Quota Section */
+.quota-section {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding: 1rem 1.5rem;
+  background: var(--bg-secondary, #f9fafb);
+  border-bottom: 1px solid var(--border, #e9ecef);
+}
+
+.quota-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.quota-label {
+  font-size: 0.875rem;
+  color: var(--text-muted, #6b7280);
+  font-weight: 500;
+}
+
+.quota-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text, #1f2937);
+  padding: 0.25rem 0.5rem;
+  background: #fff;
+  border-radius: 0.375rem;
+  min-width: 60px;
+  text-align: center;
+}
+
+.quota-value.warning {
+  color: #f59e0b;
+}
+
+.quota-value.danger {
+  color: #ef4444;
 }
 
 /* Tabs */
@@ -536,6 +593,78 @@
 </style>
 
 <script>
+// Load quota information on page load
+document.addEventListener('DOMContentLoaded', function() {
+  loadQuotaInfo();
+});
+
+// Load and display quota information
+async function loadQuotaInfo() {
+  try {
+    const response = await fetch('{% url "tracker:ai_quota_status" %}', {
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}'
+      }
+    });
+    const result = await response.json();
+
+    if (result.success && result.quota) {
+      const quota = result.quota;
+      updateQuotaDisplay(quota);
+    }
+  } catch (err) {
+    console.error('Failed to load quota info:', err);
+  }
+}
+
+// Update quota display
+function updateQuotaDisplay(quota) {
+  const dailyUsed = quota.usage.daily;
+  const dailyLimit = quota.limits.daily;
+  const monthlyUsed = quota.usage.monthly;
+  const monthlyLimit = quota.limits.monthly;
+
+  const dailyRemaining = quota.remaining.daily;
+  const monthlyRemaining = quota.remaining.monthly;
+
+  // Update display
+  const dailyEl = document.getElementById('quotaDaily');
+  const monthlyEl = document.getElementById('quotaMonthly');
+
+  dailyEl.textContent = `${dailyRemaining}/${dailyLimit}`;
+  monthlyEl.textContent = `${monthlyRemaining}/${monthlyLimit}`;
+
+  // Add warning/danger classes
+  dailyEl.classList.remove('warning', 'danger');
+  monthlyEl.classList.remove('warning', 'danger');
+
+  const dailyPercent = quota.percentage_used.daily;
+  const monthlyPercent = quota.percentage_used.monthly;
+
+  if (dailyPercent >= 90) {
+    dailyEl.classList.add('danger');
+  } else if (dailyPercent >= 70) {
+    dailyEl.classList.add('warning');
+  }
+
+  if (monthlyPercent >= 90) {
+    monthlyEl.classList.add('danger');
+  } else if (monthlyPercent >= 70) {
+    monthlyEl.classList.add('warning');
+  }
+}
+
+// Update quota from API response (simplified version)
+function updateQuotaFromResponse(remaining) {
+  const dailyEl = document.getElementById('quotaDaily');
+  const monthlyEl = document.getElementById('monthlyDaily');
+
+  if (remaining.daily_remaining !== undefined) {
+    // Reload full quota info to get accurate counts
+    loadQuotaInfo();
+  }
+}
+
 // Tab switching
 function switchTab(tabName) {
   // Update tab buttons
@@ -734,10 +863,20 @@ async function analyzeText() {
 
     const result = await response.json();
 
+    // Update quota display if provided
+    if (result.remaining) {
+      updateQuotaFromResponse(result.remaining);
+    }
+
     if (result.success) {
       showPreview(result.data);
     } else {
-      showError(result.error || 'Failed to analyze text');
+      // Check if it's a rate limit error
+      if (result.rate_limit && response.status === 429) {
+        showError('⏰ ' + result.error);
+      } else {
+        showError(result.error || 'Failed to analyze text');
+      }
     }
   } catch (err) {
     showError('Request failed: ' + err.message);
@@ -771,10 +910,20 @@ async function analyzeImage() {
 
     const result = await response.json();
 
+    // Update quota display if provided
+    if (result.remaining) {
+      updateQuotaFromResponse(result.remaining);
+    }
+
     if (result.success) {
       showPreview(result.data);
     } else {
-      showError(result.error || 'Failed to analyze image');
+      // Check if it's a rate limit error
+      if (result.rate_limit && response.status === 429) {
+        showError('⏰ ' + result.error);
+      } else {
+        showError(result.error || 'Failed to analyze image');
+      }
     }
   } catch (err) {
     showError('Request failed: ' + err.message);
