@@ -478,7 +478,7 @@ def ai_parse_food(request):
 @require_POST
 @login_required
 def ai_save_food(request):
-    """Save AI-parsed (and user-edited) food data."""
+    """Save AI-parsed (and user-edited) food and exercise data."""
     try:
         raw_json = request.POST.get('json_data', '').strip()
         if not raw_json:
@@ -492,6 +492,7 @@ def ai_save_food(request):
 
         user = request.user
         dietary_count = 0
+        exercise_count = 0
 
         for entry in data:
             if not isinstance(entry, dict):
@@ -534,10 +535,43 @@ def ai_save_food(request):
                 DietaryEntry.objects.create(**create_kwargs)
                 dietary_count += 1
 
+            # Exercise items
+            exercise_items = entry.get('exercise') or []
+            if not isinstance(exercise_items, list):
+                exercise_items = []
+
+            for ex in exercise_items:
+                if not isinstance(ex, dict):
+                    continue
+
+                # Accept both duration_minutes (model field) and duration_min
+                duration = ex.get('duration_minutes', None)
+                if duration is None:
+                    duration = ex.get('duration_min', 0)
+
+                ex_remarks = (ex.get('remarks') or "").strip() or day_remarks
+
+                ExerciseEntry.objects.create(
+                    user=user,
+                    date=entry_date,
+                    activity=ex.get('activity', '') or '',
+                    duration_minutes=duration or 0,
+                    calories_burned=ex.get('calories_burned', 0) or 0,
+                    remarks=ex_remarks
+                )
+                exercise_count += 1
+
+        # Build success message
+        messages = []
         if dietary_count > 0:
-            return JsonResponse({'success': True, 'message': f'Saved {dietary_count} food item(s).'})
+            messages.append(f'{dietary_count} food item(s)')
+        if exercise_count > 0:
+            messages.append(f'{exercise_count} exercise(s)')
+
+        if messages:
+            return JsonResponse({'success': True, 'message': f'Saved {" and ".join(messages)}.'})
         else:
-            return JsonResponse({'success': False, 'error': 'No valid food items to save'})
+            return JsonResponse({'success': False, 'error': 'No valid items to save'})
 
     except json.JSONDecodeError:
         return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
