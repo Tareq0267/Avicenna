@@ -17,6 +17,10 @@ class UserProfile(models.Model):
         related_name='partner_of',
         help_text="Link to partner's account for couples mode"
     )
+    ai_enabled = models.BooleanField(
+        default=False,
+        help_text="Allow this user to access AI food logging features"
+    )
 
     def __str__(self):
         partner_name = self.partner.username if self.partner else "No partner"

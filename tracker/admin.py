@@ -14,6 +14,7 @@ class UserProfileInline(admin.StackedInline):
     verbose_name = 'Profile'
     verbose_name_plural = 'Profile'
     fk_name = 'user'
+    fields = ('partner', 'ai_enabled')
 
 
 class UserAdmin(BaseUserAdmin):

@@ -404,6 +404,9 @@ def daily_recap(request, date_str, user_id=None):
 @login_required
 def ai_food_log(request):
     """Render the AI food logging page."""
+    # Check if user has AI access enabled
+    if not hasattr(request.user, 'profile') or not request.user.profile.ai_enabled:
+        return render(request, 'tracker/ai_access_denied.html', status=403)
     return render(request, 'tracker/ai_food_log.html')
 
 
@@ -411,6 +414,10 @@ def ai_food_log(request):
 @login_required
 def ai_parse_food(request):
     """Process text or image input through AI and return structured data."""
+    # Check if user has AI access enabled
+    if not hasattr(request.user, 'profile') or not request.user.profile.ai_enabled:
+        return JsonResponse({'success': False, 'error': 'AI features not enabled for your account'}, status=403)
+
     from .rate_limit import ai_rate_limit, log_ai_usage
 
     # Apply rate limiting manually (since we need to log usage after)
@@ -479,6 +486,10 @@ def ai_parse_food(request):
 @login_required
 def ai_save_food(request):
     """Save AI-parsed (and user-edited) food and exercise data."""
+    # Check if user has AI access enabled
+    if not hasattr(request.user, 'profile') or not request.user.profile.ai_enabled:
+        return JsonResponse({'success': False, 'error': 'AI features not enabled for your account'}, status=403)
+
     try:
         raw_json = request.POST.get('json_data', '').strip()
         if not raw_json:
@@ -582,6 +593,10 @@ def ai_save_food(request):
 @login_required
 def ai_quota_status(request):
     """Get user's current AI quota status."""
+    # Check if user has AI access enabled
+    if not hasattr(request.user, 'profile') or not request.user.profile.ai_enabled:
+        return JsonResponse({'success': False, 'error': 'AI features not enabled for your account'}, status=403)
+
     from .rate_limit import get_user_quota_info
 
     quota_info = get_user_quota_info(request.user)
