@@ -14,7 +14,14 @@ class UserProfileInline(admin.StackedInline):
     verbose_name = 'Profile'
     verbose_name_plural = 'Profile'
     fk_name = 'user'
-    fields = ('partner', 'ai_enabled')
+    fields = (
+        'partner',
+        'ai_enabled',
+        ('fitness_goal', 'daily_calorie_goal'),
+        ('age', 'gender'),
+        ('height_cm', 'activity_level'),
+        'calorie_profile_complete',
+    )
 
 
 class UserAdmin(BaseUserAdmin):

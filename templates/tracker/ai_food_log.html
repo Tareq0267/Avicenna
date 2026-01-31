@@ -118,6 +118,17 @@
         <p class="text-muted">Adjust any values before saving</p>
       </div>
 
+      <!-- Coach Feedback (shown when AI provides personalized feedback) -->
+      <div class="coach-feedback-card" id="coachFeedbackSection" style="display: none;">
+        <div class="coach-avatar">
+          <i class="bi bi-person-heart"></i>
+        </div>
+        <div class="coach-message">
+          <span class="coach-label">Coach says:</span>
+          <p id="coachFeedbackText" class="coach-text"></p>
+        </div>
+      </div>
+
       <div class="preview-form">
         <!-- Date -->
         <div class="form-group mb-3">
@@ -127,8 +138,8 @@
           <input type="date" id="entryDate" class="form-control">
         </div>
 
-        <!-- Remarks -->
-        <div class="form-group mb-3">
+        <!-- Remarks (hidden when coach feedback is present) -->
+        <div class="form-group mb-3" id="remarksFieldContainer">
           <label for="entryRemarks" class="form-label">
             <i class="bi bi-chat-left-text me-2"></i>Remarks (optional)
           </label>
@@ -539,6 +550,49 @@
   border-radius: 0.75rem;
 }
 
+/* Coach Feedback */
+.coach-feedback-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(52, 211, 153, 0.05));
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.coach-avatar {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #10b981, #34d399);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.coach-message {
+  flex: 1;
+}
+
+.coach-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #10b981;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.coach-text {
+  margin: 0.25rem 0 0;
+  color: var(--text, #1f2937);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
 /* Success */
 .success-section {
   padding: 3rem 1.5rem;
@@ -608,6 +662,9 @@
 </style>
 
 <script>
+// Store coach feedback from AI response
+let currentCoachFeedback = '';
+
 // Load quota information on page load
 document.addEventListener('DOMContentLoaded', function() {
   loadQuotaInfo();
@@ -751,6 +808,21 @@ function showPreview(data) {
 
   // Set remarks
   document.getElementById('entryRemarks').value = data.remarks || '';
+
+  // Store and show coach feedback if available
+  const coachSection = document.getElementById('coachFeedbackSection');
+  const coachText = document.getElementById('coachFeedbackText');
+  const remarksContainer = document.getElementById('remarksFieldContainer');
+  currentCoachFeedback = data.coach_feedback || '';
+  if (currentCoachFeedback) {
+    coachText.textContent = currentCoachFeedback;
+    coachSection.style.display = 'flex';
+    // Hide remarks field when coach feedback is present (coach feedback will be saved as remarks)
+    remarksContainer.style.display = 'none';
+  } else {
+    coachSection.style.display = 'none';
+    remarksContainer.style.display = 'block';
+  }
 
   // Populate food items
   const container = document.getElementById('foodItemsContainer');
@@ -940,6 +1012,7 @@ function collectFoodData() {
   return {
     date: document.getElementById('entryDate').value,
     remarks: document.getElementById('entryRemarks').value.trim(),
+    coach_feedback: currentCoachFeedback,
     dietary: items,
     exercise: exercises
   };
@@ -1079,6 +1152,9 @@ async function saveFoodData() {
 }
 
 function resetForm() {
+  // Reset coach feedback
+  currentCoachFeedback = '';
+
   // Reset form fields
   document.getElementById('foodText').value = '';
   document.getElementById('foodImage').value = '';
@@ -1086,6 +1162,7 @@ function resetForm() {
   document.getElementById('uploadPlaceholder').style.display = 'block';
   document.getElementById('uploadPreview').style.display = 'none';
   document.getElementById('uploadArea').classList.remove('has-image');
+  document.getElementById('remarksFieldContainer').style.display = 'block';
 
   // Show tabs and input sections
   document.querySelector('.ai-tabs').style.display = 'flex';
