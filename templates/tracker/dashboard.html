@@ -595,6 +595,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const viewingPartner = {{ viewing_partner|yesno:"true,false" }};
   const targetUserId = {{ target_user.id }};
   const dailyCalorieGoal = {% if calorie_status %}{{ calorie_status.daily_goal }}{% else %}null{% endif %};
+  const fitnessGoal = {% if calorie_status %}'{{ calorie_status.fitness_goal }}'{% else %}null{% endif %};
 
   const tooltipStyle = { trigger: 'axis', backgroundColor: '#fff', borderColor: '#e5e5e5', textStyle: { color: '#333' } };
   const gridStyle = { left: '3%', right: '4%', bottom: '3%', containLabel: true };
@@ -782,13 +783,16 @@ document.addEventListener('DOMContentLoaded', function() {
       symbolSize: 8,
       itemStyle: { color: '#6366f1' }
     };
-    // Add calorie goal line if available
+    // Add calorie goal line if available (color based on fitness goal)
     if (dailyCalorieGoal) {
+      // Red for deficit (lose), Green for surplus (gain), Amber for maintain
+      const goalLineColor = fitnessGoal === 'gain' ? '#10b981' : fitnessGoal === 'lose' ? '#ef4444' : '#f59e0b';
+      const goalLabel = fitnessGoal === 'gain' ? 'Target: {c} kcal' : fitnessGoal === 'lose' ? 'Limit: {c} kcal' : 'Goal: {c} kcal';
       calSeriesConfig.markLine = {
         silent: true,
         symbol: 'none',
-        lineStyle: { color: '#ef4444', width: 2, type: 'dashed' },
-        label: { formatter: 'Goal: {c} kcal', position: 'insideEndTop', color: '#ef4444', fontSize: 11 },
+        lineStyle: { color: goalLineColor, width: 2, type: 'dashed' },
+        label: { formatter: goalLabel, position: 'insideEndTop', color: goalLineColor, fontSize: 11 },
         data: [{ yAxis: dailyCalorieGoal }]
       };
     }
