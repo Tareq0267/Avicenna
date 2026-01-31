@@ -94,6 +94,10 @@ def dashboard(request, view_partner=False):
     viewing_partner = view_partner and partner is not None
     target_user = partner if viewing_partner else request.user
 
+    # Get calorie status for the target user
+    from .calorie_calculator import get_calorie_status
+    calorie_status = get_calorie_status(target_user)
+
     # Find the most recent entry date to base charts on actual data
     latest_dietary = DietaryEntry.objects.filter(user=target_user).aggregate(m=Max('date'))['m']
     latest_exercise = ExerciseEntry.objects.filter(user=target_user).aggregate(m=Max('date'))['m']
@@ -165,6 +169,12 @@ def dashboard(request, view_partner=False):
     total_calories = sum(cal_values)
     total_exercise_min = sum(ex_values)
 
+    # Check if user's calorie profile is complete
+    try:
+        calorie_profile_complete = target_user.profile.calorie_profile_complete
+    except (AttributeError, UserProfile.DoesNotExist):
+        calorie_profile_complete = False
+
     context = {
         'dietary_recent': dietary_recent,
         'exercise_recent': exercise_recent,
@@ -193,6 +203,9 @@ def dashboard(request, view_partner=False):
         'partner': partner,
         'partner_name': partner.username if partner else None,
         'target_user': target_user,
+        # Calorie tracking
+        'calorie_status': calorie_status,
+        'calorie_profile_complete': calorie_profile_complete,
     }
     return render(request, 'tracker/dashboard.html', context)
 
@@ -240,12 +253,14 @@ def import_json(request):
 
             # Day-level remarks (applies to all items for that date)
             day_remarks = (entry.get('remarks') or "").strip()
+            coach_feedback = (entry.get('coach_feedback') or "").strip()
 
             # Dietary list can be "dietary" OR "food"
             food_items = entry.get('dietary') or entry.get('food') or []
             if not isinstance(food_items, list):
                 food_items = []
 
+            is_first_item = True
             for item in food_items:
                 if not isinstance(item, dict):
                     continue
@@ -253,6 +268,11 @@ def import_json(request):
                 # Some JSONs may put notes/note/remarks per item; fall back to day remarks
                 item_notes = (item.get('notes') or item.get('note') or "").strip()
                 item_remarks = (item.get('remarks') or "").strip() or day_remarks
+
+                # Use coach feedback as remarks for first item if available
+                if is_first_item and coach_feedback:
+                    item_remarks = coach_feedback
+                    is_first_item = False
 
                 create_kwargs = {
                     "user": user,
@@ -374,12 +394,23 @@ def daily_recap(request, date_str, user_id=None):
         for w in weight:
             w['weight_kg'] = float(w['weight_kg'])
         
-        # Find a remarks string to use at the top level (first non-empty from dietary or exercise)
-        remarks = ""
-        if dietary and dietary[0].get('remarks'):
-            remarks = dietary[0]['remarks']
-        elif exercise and exercise[0].get('remarks'):
-            remarks = exercise[0]['remarks']
+        # Collect all unique non-empty remarks from dietary and exercise entries
+        all_remarks = []
+        seen_remarks = set()
+
+        # Gather remarks from dietary entries
+        for d in dietary:
+            remark = (d.get('remarks') or '').strip()
+            if remark and remark not in seen_remarks:
+                all_remarks.append(remark)
+                seen_remarks.add(remark)
+
+        # Gather remarks from exercise entries
+        for e in exercise:
+            remark = (e.get('remarks') or '').strip()
+            if remark and remark not in seen_remarks:
+                all_remarks.append(remark)
+                seen_remarks.add(remark)
 
         return JsonResponse({
             'success': True,
@@ -387,7 +418,7 @@ def daily_recap(request, date_str, user_id=None):
             'dietary': dietary,
             'exercise': exercise,
             'weight': weight,
-            'remarks': remarks,
+            'all_remarks': all_remarks,
             'summary': {
                 'total_calories_in': total_calories_in,
                 'total_calories_burned': total_calories_burned,
@@ -436,7 +467,20 @@ def ai_parse_food(request):
 
     try:
         from .ai_service import AIFoodLogService
-        service = AIFoodLogService()
+        from .calorie_calculator import get_calorie_status
+
+        # Get user's calorie context for personalized feedback
+        user_context = None
+        calorie_status = get_calorie_status(request.user)
+        if calorie_status:
+            user_context = {
+                'goal': calorie_status['fitness_goal'],
+                'daily_calorie_goal': calorie_status['daily_goal'],
+                'calories_today': calorie_status['calories_consumed'],
+                'calories_remaining': calorie_status['calories_remaining']
+            }
+
+        service = AIFoodLogService(user_context=user_context)
 
         # Check if this is a text or image request
         text_input = request.POST.get('text', '').strip()
@@ -519,18 +563,25 @@ def ai_save_food(request):
                 continue
 
             day_remarks = (entry.get('remarks') or "").strip()
+            coach_feedback = (entry.get('coach_feedback') or "").strip()
 
             # Dietary items
             food_items = entry.get('dietary') or entry.get('food') or []
             if not isinstance(food_items, list):
                 food_items = []
 
+            is_first_item = True
             for item in food_items:
                 if not isinstance(item, dict):
                     continue
 
                 item_notes = (item.get('notes') or item.get('note') or "").strip()
                 item_remarks = (item.get('remarks') or "").strip() or day_remarks
+
+                # Use coach feedback as remarks for first item if available
+                if is_first_item and coach_feedback:
+                    item_remarks = coach_feedback
+                    is_first_item = False
 
                 create_kwargs = {
                     "user": user,
@@ -603,4 +654,147 @@ def ai_quota_status(request):
     return JsonResponse({
         'success': True,
         'quota': quota_info
+    })
+
+
+# --- Calorie Goal Setup Views ---
+
+@login_required
+def calorie_setup(request):
+    """Calorie goal setup wizard."""
+    from .calorie_calculator import calculate_daily_calorie_goal
+    from .models import GOAL_CHOICES, GENDER_CHOICES, ACTIVITY_CHOICES
+
+    profile = request.user.profile
+
+    if request.method == 'POST':
+        # Get form data
+        fitness_goal = request.POST.get('fitness_goal')
+        age = request.POST.get('age')
+        gender = request.POST.get('gender')
+        height_cm = request.POST.get('height_cm')
+        activity_level = request.POST.get('activity_level')
+        initial_weight = request.POST.get('initial_weight')
+
+        errors = {}
+
+        # Validate required fields
+        if not fitness_goal:
+            errors['fitness_goal'] = 'Please select your goal'
+        if not age or not age.isdigit() or int(age) < 10 or int(age) > 120:
+            errors['age'] = 'Please enter a valid age (10-120)'
+        if not gender:
+            errors['gender'] = 'Please select your gender'
+        if not height_cm:
+            errors['height_cm'] = 'Please enter your height'
+        else:
+            try:
+                h = float(height_cm)
+                if h < 50 or h > 300:
+                    errors['height_cm'] = 'Please enter a valid height (50-300 cm)'
+            except ValueError:
+                errors['height_cm'] = 'Please enter a valid number'
+        if not activity_level:
+            errors['activity_level'] = 'Please select your activity level'
+
+        # Check for initial weight if no weight entries exist
+        latest_weight = WeightEntry.objects.filter(user=request.user).order_by('-date').first()
+        if not latest_weight:
+            if not initial_weight:
+                errors['initial_weight'] = 'Please enter your current weight'
+            else:
+                try:
+                    w = float(initial_weight)
+                    if w < 20 or w > 500:
+                        errors['initial_weight'] = 'Please enter a valid weight (20-500 kg)'
+                except ValueError:
+                    errors['initial_weight'] = 'Please enter a valid number'
+
+        if errors:
+            return JsonResponse({'success': False, 'errors': errors})
+
+        # Create initial weight entry if needed
+        if not latest_weight and initial_weight:
+            WeightEntry.objects.create(
+                user=request.user,
+                date=timezone.now().date(),
+                weight_kg=Decimal(initial_weight),
+                notes='Initial weight from calorie setup'
+            )
+
+        # Update profile
+        profile.fitness_goal = fitness_goal
+        profile.age = int(age)
+        profile.gender = gender
+        profile.height_cm = Decimal(height_cm)
+        profile.activity_level = activity_level
+        profile.calorie_profile_complete = True
+
+        # Calculate and save daily calorie goal
+        latest_weight = WeightEntry.objects.filter(user=request.user).order_by('-date').first()
+        if latest_weight:
+            daily_goal = calculate_daily_calorie_goal(
+                weight_kg=float(latest_weight.weight_kg),
+                height_cm=float(height_cm),
+                age=int(age),
+                gender=gender,
+                activity_level=activity_level,
+                fitness_goal=fitness_goal
+            )
+            profile.daily_calorie_goal = daily_goal
+
+        profile.save()
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Calorie goal set successfully!',
+            'daily_goal': profile.daily_calorie_goal,
+            'redirect': '/tracker/dashboard/'
+        })
+
+    # GET request - render the setup page
+    latest_weight = WeightEntry.objects.filter(user=request.user).order_by('-date').first()
+
+    context = {
+        'goal_choices': GOAL_CHOICES,
+        'gender_choices': GENDER_CHOICES,
+        'activity_choices': ACTIVITY_CHOICES,
+        'profile': profile,
+        'latest_weight': float(latest_weight.weight_kg) if latest_weight else None,
+    }
+    return render(request, 'tracker/calorie_setup.html', context)
+
+
+@require_POST
+@login_required
+def update_calorie_settings(request):
+    """Update calorie settings from dashboard modal."""
+    from .calorie_calculator import calculate_calorie_goal_for_user
+
+    profile = request.user.profile
+
+    # Update fields if provided
+    fitness_goal = request.POST.get('fitness_goal')
+    activity_level = request.POST.get('activity_level')
+    age = request.POST.get('age')
+
+    if fitness_goal:
+        profile.fitness_goal = fitness_goal
+    if activity_level:
+        profile.activity_level = activity_level
+    if age and age.isdigit():
+        profile.age = int(age)
+
+    profile.save()
+
+    # Recalculate daily goal
+    new_goal = calculate_calorie_goal_for_user(request.user)
+    if new_goal:
+        profile.daily_calorie_goal = new_goal
+        profile.save()
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Settings updated!',
+        'daily_goal': profile.daily_calorie_goal
     })

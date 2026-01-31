@@ -13,6 +13,10 @@ urlpatterns = [
     path('daily-recap/<str:date_str>/user/<int:user_id>/', views.daily_recap, name='daily_recap_user'),
     path('guide/', views.guide, name='guide'),
 
+    # Calorie Goal Setup
+    path('calorie-setup/', views.calorie_setup, name='calorie_setup'),
+    path('calorie-settings/', views.update_calorie_settings, name='update_calorie_settings'),
+
     # AI Food Logging
     path('ai/', views.ai_food_log, name='ai_food_log'),
     path('ai/parse/', views.ai_parse_food, name='ai_parse_food'),

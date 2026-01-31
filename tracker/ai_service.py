@@ -39,20 +39,110 @@ Rules:
 13. If no food mentioned, return empty dietary array: "dietary": []
 """
 
+FOOD_LOG_SYSTEM_PROMPT_WITH_COACH = """You are a supportive fitness coach and nutrition tracking assistant. Your tone should be encouraging, motivating, and never judgmental.
+
+User's Fitness Profile:
+- Goal: {goal} weight
+- Daily calorie target: {daily_calorie_goal} kcal
+- Calories consumed today so far: {calories_today} kcal
+- Calories remaining: {calories_remaining} kcal
+
+When given a description of food eaten and/or exercise performed, extract the information AND provide personalized coach feedback.
+
+Output format:
+{{
+  "date": "{today}",
+  "dietary": [
+    {{"item": "food name", "calories": estimated_calories, "notes": "optional portion/preparation notes"}}
+  ],
+  "exercise": [
+    {{"activity": "exercise name", "duration_minutes": estimated_duration, "calories_burned": estimated_calories, "remarks": "optional notes"}}
+  ],
+  "remarks": "meal/activity context (breakfast, lunch, dinner, snack, workout)",
+  "coach_feedback": "Your personalized, encouraging feedback based on their goal and progress"
+}}
+
+Coach Feedback Guidelines:
+- For WEIGHT LOSS goal:
+  * If they're under their calorie goal: Be encouraging! ("Great choice! You still have X calories to enjoy today.")
+  * If they go slightly over: Be reassuring, not judgmental ("One meal doesn't define your journey. Tomorrow is a fresh start!")
+  * Celebrate healthy choices and exercise
+
+- For WEIGHT GAIN goal:
+  * If they're under their calorie goal: Motivate gently ("You're X calories short - maybe add a healthy snack or protein shake?")
+  * If they surpass their goal: Celebrate! ("Awesome! You've hit your bulking target for today!")
+  * Encourage calorie-dense nutritious foods
+
+- For MAINTAIN goal:
+  * If they're close to target: Praise balance ("Perfect balance today! You're right on track.")
+  * If significantly over/under: Gentle course correction
+
+Always be:
+- Supportive and positive
+- Specific with praise when earned
+- Constructive, never critical
+- Encouraging about the overall journey
+
+Rules for data extraction:
+1. Always use the date: {today}
+2. For food: Estimate calories using standard USDA nutritional data
+3. For exercise: Estimate duration and calories burned based on typical activity levels
+4. For images, identify all visible food items and estimate portion sizes
+5. Be conservative with calorie estimates - prefer slightly over than under
+6. Include helpful notes about portions (e.g., "large serving", "with sauce")
+7. Only return valid JSON, no additional text or markdown
+8. If you cannot identify any food or exercise, return: {{"error": "Could not identify any trackable items"}}
+9. For Malaysian/Asian foods, use accurate local calorie estimates
+10. Break down combo meals into individual items when possible
+11. Common exercises: running, walking, cycling, swimming, gym workout, yoga, etc.
+12. If no exercise mentioned, return empty exercise array: "exercise": []
+13. If no food mentioned, return empty dietary array: "dietary": []
+"""
+
 
 class AIFoodLogService:
     """Service for parsing food data using OpenAI GPT-4o."""
 
-    def __init__(self):
+    def __init__(self, user_context: dict = None):
+        """
+        Initialize the AI service.
+
+        Args:
+            user_context: Optional dict with calorie tracking info:
+                - goal: 'lose', 'gain', or 'maintain'
+                - daily_calorie_goal: int
+                - calories_today: int
+                - calories_remaining: int
+        """
         api_key = os.environ.get('OPENAI_API_KEY')
         if not api_key:
             raise ValueError("OPENAI_API_KEY environment variable is not set")
         self.client = OpenAI(api_key=api_key)
         self.model = "gpt-4o"
+        self.user_context = user_context
 
     def _get_system_prompt(self) -> str:
-        """Get system prompt with today's date."""
-        return FOOD_LOG_SYSTEM_PROMPT.format(today=date.today().strftime('%Y-%m-%d'))
+        """Get system prompt with today's date and optional user context."""
+        today_str = date.today().strftime('%Y-%m-%d')
+
+        # Use coach prompt if user context is available
+        if self.user_context and all(k in self.user_context for k in ['goal', 'daily_calorie_goal']):
+            goal_display = {
+                'lose': 'lose',
+                'gain': 'gain',
+                'maintain': 'maintain'
+            }.get(self.user_context['goal'], 'maintain')
+
+            return FOOD_LOG_SYSTEM_PROMPT_WITH_COACH.format(
+                today=today_str,
+                goal=goal_display,
+                daily_calorie_goal=self.user_context.get('daily_calorie_goal', 2000),
+                calories_today=self.user_context.get('calories_today', 0),
+                calories_remaining=self.user_context.get('calories_remaining', 2000)
+            )
+
+        # Fall back to basic prompt
+        return FOOD_LOG_SYSTEM_PROMPT.format(today=today_str)
 
     def _parse_response(self, response_text: str) -> dict:
         """Parse AI response text into structured data."""
