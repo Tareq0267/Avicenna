@@ -2,6 +2,241 @@
 {% load static %}
 
 {% block content %}
+<!-- Special Love Letter Modal for Qaisara -->
+{% if FOR_HER %}
+<div class="modal fade" id="loveLetterModal" tabindex="-1" aria-labelledby="loveLetterModalLabel" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content love-letter-content">
+      <div class="love-letter-envelope">
+        <div class="envelope-heart"><i class="bi bi-heart-fill"></i></div>
+      </div>
+      <div class="modal-header love-letter-header">
+        <h5 class="modal-title" id="loveLetterModalLabel">
+          <i class="bi bi-envelope-heart-fill me-2"></i>A Letter For You
+        </h5>
+      </div>
+      <div class="modal-body love-letter-body">
+        <p class="love-greeting">Hii my cutiepie Qaisara <i class="bi bi-heart-fill text-danger"></i></p>
+        <p class="love-message">
+          Since you are one of the most loyal Avicenna member, I have given you a special version of this app.
+          For you only, it's <strong>Avicenna<i class="bi bi-heart-fill text-danger ms-1"></i></strong>
+        </p>
+        <div class="love-benefits">
+          <p class="benefits-title"><i class="bi bi-gift-fill me-2"></i>Benefits:</p>
+          <p class="benefit-item">
+            <i class="bi bi-check-heart-fill text-success me-2"></i>
+            You are given <strong>UNOBSTRUCTED</strong> use of the AI feature <i class="bi bi-heart-fill text-danger"></i>
+          </p>
+          <p class="cute-warning">
+            <i class="bi bi-emoji-heart-eyes me-1"></i> Remember to not overuse it okay sayang~
+          </p>
+        </div>
+        <div class="love-signature">
+          <p class="love-closing">Love you <i class="bi bi-hearts text-danger"></i></p>
+          <p class="love-name">Tareq</p>
+          <p class="love-titles">(your beloved boyfriend / future husband / your date / your love / your bam bam boy)</p>
+        </div>
+      </div>
+      <div class="modal-footer love-letter-footer">
+        <button type="button" class="btn btn-love" data-bs-dismiss="modal">
+          <i class="bi bi-heart-fill me-2"></i>I Love You Too!
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Love Letter Modal Styles */
+.love-letter-content {
+  background: linear-gradient(135deg, #fff5f8 0%, #ffe4ec 100%);
+  border: 3px solid #ff69b4;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(255, 105, 180, 0.3);
+  overflow: visible;
+  position: relative;
+}
+
+.love-letter-envelope {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #ff69b4, #ff1493);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
+  animation: heartPulse 1.5s ease-in-out infinite;
+}
+
+.envelope-heart i {
+  font-size: 1.8rem;
+  color: white;
+}
+
+@keyframes heartPulse {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.1); }
+}
+
+.love-letter-header {
+  background: transparent;
+  border-bottom: 2px dashed #ffb6c1;
+  padding-top: 40px;
+  text-align: center;
+  justify-content: center;
+}
+
+.love-letter-header .modal-title {
+  color: #ff1493;
+  font-family: 'Georgia', serif;
+  font-size: 1.5rem;
+}
+
+.love-letter-body {
+  padding: 1.5rem 2rem;
+  font-family: 'Georgia', serif;
+  color: #8b4567;
+  line-height: 1.8;
+}
+
+.love-greeting {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #ff1493;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.love-message {
+  font-size: 1rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.love-benefits {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 15px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px dashed #ff69b4;
+}
+
+.benefits-title {
+  color: #ff1493;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.benefit-item {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.cute-warning {
+  font-size: 0.9rem;
+  color: #ff69b4;
+  font-style: italic;
+  text-align: center;
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
+.love-signature {
+  text-align: right;
+  padding-top: 1rem;
+  border-top: 1px dashed #ffb6c1;
+}
+
+.love-closing {
+  font-size: 1.1rem;
+  margin-bottom: 0.3rem;
+}
+
+.love-name {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #ff1493;
+  font-style: italic;
+  margin-bottom: 0.2rem;
+}
+
+.love-titles {
+  font-size: 0.75rem;
+  color: #c77daa;
+  font-style: italic;
+}
+
+.love-letter-footer {
+  background: transparent;
+  border-top: none;
+  justify-content: center;
+  padding-bottom: 1.5rem;
+}
+
+.btn-love {
+  background: linear-gradient(135deg, #ff69b4, #ff1493);
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
+}
+
+.btn-love:hover {
+  background: linear-gradient(135deg, #ff1493, #ff69b4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 105, 180, 0.5);
+  color: white;
+}
+
+/* Floating hearts animation */
+.love-letter-content::before,
+.love-letter-content::after {
+  content: '\2665';
+  position: absolute;
+  font-size: 1rem;
+  color: #ffb6c1;
+  animation: floatHeart 3s ease-in-out infinite;
+}
+
+.love-letter-content::before {
+  top: 20%;
+  left: -10px;
+  animation-delay: 0s;
+}
+
+.love-letter-content::after {
+  top: 60%;
+  right: -10px;
+  animation-delay: 1.5s;
+}
+
+@keyframes floatHeart {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.6; }
+  50% { transform: translateY(-10px) rotate(10deg); opacity: 1; }
+}
+</style>
+
+<script>
+// Show love letter modal on first visit (per session)
+document.addEventListener('DOMContentLoaded', function() {
+  const loveLetterShown = sessionStorage.getItem('loveLetterShown');
+  if (!loveLetterShown) {
+    const loveModal = new bootstrap.Modal(document.getElementById('loveLetterModal'));
+    loveModal.show();
+    sessionStorage.setItem('loveLetterShown', 'true');
+  }
+});
+</script>
+{% endif %}
 <!-- Partner Mode Banner (when viewing partner's dashboard) -->
 {% if viewing_partner %}
 <div class="partner-banner">

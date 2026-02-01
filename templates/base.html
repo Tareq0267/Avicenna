@@ -9,12 +9,153 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/tracker/css/style.css">
     <link rel="manifest" href="/static/manifest.json">
+    {% if FOR_HER %}
+    <style>
+      /* Special Pink Theme for Qaisara */
+      .navbar-special {
+        background: linear-gradient(135deg, #ff69b4, #ff1493) !important;
+      }
+
+      .navbar-special .nav-link,
+      .navbar-special .navbar-toggler-icon {
+        color: white !important;
+      }
+
+      .navbar-special .nav-link:hover {
+        color: #ffe4ec !important;
+      }
+
+      .navbar-brand-special {
+        color: white !important;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+
+      .navbar-brand-special:hover {
+        color: #ffe4ec !important;
+      }
+
+      .brand-icon-special {
+        font-size: 1.3rem;
+        animation: heartBeat 1.5s ease-in-out infinite;
+      }
+
+      .brand-heart {
+        color: #fff;
+        font-size: 1rem;
+        margin-left: 2px;
+        animation: heartBeat 1.5s ease-in-out infinite;
+        animation-delay: 0.5s;
+      }
+
+      @keyframes heartBeat {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+      }
+
+      /* Pink accent for buttons when special */
+      .navbar-special .btn-success {
+        background: linear-gradient(135deg, #ff85c1, #ff69b4) !important;
+        border-color: #ff69b4 !important;
+      }
+
+      .navbar-special .btn-success:hover {
+        background: linear-gradient(135deg, #ff1493, #ff69b4) !important;
+      }
+
+      .navbar-special .btn-outline-primary {
+        color: white !important;
+        border-color: white !important;
+      }
+
+      .navbar-special .btn-outline-primary:hover {
+        background: rgba(255, 255, 255, 0.2) !important;
+      }
+
+      .navbar-special .btn-warning {
+        background: white !important;
+        color: #ff1493 !important;
+        border-color: white !important;
+      }
+
+      /* Pink Mode Toggle Button - Fixed Bottom Left */
+      .btn-pink-toggle-fixed {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        z-index: 1050;
+        background: linear-gradient(135deg, #ff69b4, #ff1493);
+        border: 3px solid white;
+        color: white;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
+        cursor: pointer;
+      }
+
+      .btn-pink-toggle-fixed:hover {
+        transform: scale(1.15);
+        box-shadow: 0 6px 25px rgba(255, 105, 180, 0.5);
+      }
+
+      .btn-pink-toggle-fixed.active {
+        animation: togglePulseIntermittent 6s ease-in-out infinite;
+      }
+
+      .btn-pink-toggle-fixed:not(.active) {
+        background: #f0f0f0;
+        border-color: #ff69b4;
+        color: #ff69b4;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        animation: togglePulseGray 8s ease-in-out infinite;
+      }
+
+      .btn-pink-toggle-fixed:not(.active):hover {
+        background: #ffe4ec;
+        animation: none;
+      }
+
+      /* Intermittent pulse - pulses twice then waits */
+      @keyframes togglePulseIntermittent {
+        0%, 20%, 40%, 100% {
+          transform: scale(1);
+          box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
+        }
+        10%, 30% {
+          transform: scale(1.1);
+          box-shadow: 0 4px 25px rgba(255, 105, 180, 0.7), 0 0 0 10px rgba(255, 105, 180, 0.2);
+        }
+      }
+
+      /* Subtle pulse for inactive state */
+      @keyframes togglePulseGray {
+        0%, 15%, 30%, 100% {
+          transform: scale(1);
+        }
+        7%, 22% {
+          transform: scale(1.08);
+        }
+      }
+    </style>
+    {% endif %}
   </head>
   <body>
-    <nav class="navbar navbar-expand-lg">
+    <nav class="navbar navbar-expand-lg" id="mainNavbar">
       <div class="container-fluid">
-        <a class="navbar-brand" href="/"><span class="brand-icon">💪</span>Avicenna</a>
-        
+        <!-- Normal brand (shown by default, hidden when pink mode active) -->
+        <a class="navbar-brand" id="normalBrand" href="/"><span class="brand-icon">💪</span>Avicenna</a>
+        <!-- Special brand (hidden by default, shown when pink mode active) -->
+        <a class="navbar-brand navbar-brand-special d-none" id="specialBrand" href="/"><span class="brand-icon brand-icon-special">🤍</span>Avicenna<span class="brand-heart">♥</span></a>
+
         <!-- Right side: buttons + toggler -->
         <div class="d-flex align-items-center gap-1 ms-auto">
           {% if user.is_authenticated %}
@@ -55,6 +196,13 @@
     <main class="container py-4">
       {% block content %}{% endblock %}
     </main>
+
+    {% if FOR_HER %}
+    <!-- Fixed Pink Mode Toggle - Bottom Left -->
+    <button type="button" class="btn-pink-toggle-fixed" id="pinkModeToggle" title="Toggle Pink Mode">
+      <i class="bi bi-heart-fill" id="pinkToggleIcon"></i>
+    </button>
+    {% endif %}
 
     <!-- Import JSON Modal -->
     <div class="modal fade" id="importJsonModal" tabindex="-1" aria-labelledby="importJsonModalLabel" aria-hidden="true">
@@ -174,7 +322,7 @@
       e.preventDefault();
       const formData = new FormData(this);
       const resultDiv = document.getElementById('weightResult');
-      
+
       fetch('/tracker/add-weight/', {
         method: 'POST',
         body: formData
@@ -197,6 +345,50 @@
         resultDiv.textContent = 'Request failed: ' + err;
       });
     });
+
+    // Pink Mode Toggle (for special users)
+    const pinkToggle = document.getElementById('pinkModeToggle');
+    if (pinkToggle) {
+      const navbar = document.getElementById('mainNavbar');
+      const normalBrand = document.getElementById('normalBrand');
+      const specialBrand = document.getElementById('specialBrand');
+      const toggleIcon = document.getElementById('pinkToggleIcon');
+
+      // Check localStorage for saved preference (default to pink ON)
+      const pinkModeEnabled = localStorage.getItem('pinkModeEnabled');
+
+      // If no preference saved, default to ON (true)
+      const isPinkMode = pinkModeEnabled === null ? true : pinkModeEnabled === 'true';
+
+      function applyPinkMode(enabled) {
+        if (enabled) {
+          navbar.classList.add('navbar-special');
+          normalBrand.classList.add('d-none');
+          specialBrand.classList.remove('d-none');
+          pinkToggle.classList.add('active');
+          toggleIcon.classList.remove('bi-heart');
+          toggleIcon.classList.add('bi-heart-fill');
+        } else {
+          navbar.classList.remove('navbar-special');
+          normalBrand.classList.remove('d-none');
+          specialBrand.classList.add('d-none');
+          pinkToggle.classList.remove('active');
+          toggleIcon.classList.remove('bi-heart-fill');
+          toggleIcon.classList.add('bi-heart');
+        }
+      }
+
+      // Apply initial state
+      applyPinkMode(isPinkMode);
+
+      // Toggle on click
+      pinkToggle.addEventListener('click', function() {
+        const currentState = navbar.classList.contains('navbar-special');
+        const newState = !currentState;
+        applyPinkMode(newState);
+        localStorage.setItem('pinkModeEnabled', newState);
+      });
+    }
     </script>
   </body>
 </html>

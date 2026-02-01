@@ -23,13 +23,28 @@ def get_rate_limits():
     }
 
 
+def is_special_user(user):
+    """Check if user is in the 'special' group (unlimited AI access)."""
+    return user.groups.filter(name='special').exists()
+
+
 def check_rate_limit(user):
     """
     Check if user has exceeded rate limits.
+    Special users (in 'special' group) have unlimited access.
 
     Returns:
         tuple: (allowed: bool, error_message: str or None, remaining: dict)
     """
+    # Special users have unlimited access
+    if is_special_user(user):
+        return True, None, {
+            'hourly_remaining': float('inf'),
+            'daily_remaining': float('inf'),
+            'monthly_remaining': float('inf'),
+            'unlimited': True,
+        }
+
     limits = get_rate_limits()
 
     # Check hourly limit
@@ -125,10 +140,36 @@ def log_ai_usage(user, request_type, success=True, error_message='', tokens_used
 def get_user_quota_info(user):
     """
     Get user's current quota information.
+    Special users get unlimited access with a cute reminder.
 
     Returns:
         dict with usage counts and remaining quota
     """
+    # Special users have unlimited access
+    if is_special_user(user):
+        hourly_count = AIUsage.get_usage_count(user, hours=1)
+        daily_count = AIUsage.get_daily_count(user)
+        monthly_count = AIUsage.get_monthly_count(user)
+        return {
+            'unlimited': True,
+            'special_message': "You have unlimited AI access, sayang! But remember not to overuse it okay~ ",
+            'limits': {'hourly': '∞', 'daily': '∞', 'monthly': '∞'},
+            'usage': {
+                'hourly': hourly_count,
+                'daily': daily_count,
+                'monthly': monthly_count,
+            },
+            'remaining': {
+                'hourly': '∞',
+                'daily': '∞',
+                'monthly': '∞',
+            },
+            'percentage_used': {
+                'daily': 0,
+                'monthly': 0,
+            }
+        }
+
     limits = get_rate_limits()
 
     hourly_count = AIUsage.get_usage_count(user, hours=1)
@@ -136,6 +177,7 @@ def get_user_quota_info(user):
     monthly_count = AIUsage.get_monthly_count(user)
 
     return {
+        'unlimited': False,
         'limits': limits,
         'usage': {
             'hourly': hourly_count,
