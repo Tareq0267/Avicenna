@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+      <div class="card shadow-sm">
+        <div class="card-body p-5">
+          <div class="mb-4">
+            <i class="bi bi-lock-fill text-warning" style="font-size: 4rem;"></i>
+          </div>
+          <h2 class="mb-3">AI Features Not Available</h2>
+          <p class="text-muted mb-4">
+            Your account does not have access to AI food logging features.
+            Please contact the administrator if you believe this is an error.
+          </p>
+          <a href="{% url 'tracker:dashboard' %}" class="btn btn-primary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

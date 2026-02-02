@@ -13,9 +13,51 @@
       <p class="lead">{% if FOR_HER %}Your personal health journey starts here{% else %}Track your nutrition and exercise using AI-powered logging{% endif %}</p>
     </div>
 
-    <!-- How It Works -->
+    <!-- How It Works - Built-in AI -->
     <section class="guide-section">
-      <h2><i class="bi bi-lightbulb me-2"></i>How It Works</h2>
+      <h2><i class="bi bi-robot me-2"></i>Built-in AI Logging (Recommended)</h2>
+      <p class="text-muted mb-3">The fastest way to log your meals and exercises with personalized coaching feedback.</p>
+      <div class="workflow-steps">
+        <div class="workflow-step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h4>Set Up Your Goal</h4>
+            <p>Complete the calorie goal setup to get personalized daily targets and coach feedback.</p>
+          </div>
+        </div>
+        <div class="workflow-arrow"><i class="bi bi-arrow-right"></i></div>
+        <div class="workflow-step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h4>Use AI Food Log</h4>
+            <p>Click <span class="badge bg-primary"><i class="bi bi-robot"></i> AI Log</span> and describe what you ate or did.</p>
+          </div>
+        </div>
+        <div class="workflow-arrow"><i class="bi bi-arrow-right"></i></div>
+        <div class="workflow-step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h4>Get Coach Feedback</h4>
+            <p>AI parses your entry and gives personalized encouragement based on your fitness goal.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="coach-feature-card mt-4">
+        <div class="coach-feature-icon">
+          <i class="bi bi-person-heart"></i>
+        </div>
+        <div class="coach-feature-text">
+          <h5>AI Coach Feedback</h5>
+          <p class="mb-0">Once you set up your calorie goal, the AI acts as your personal fitness coach - celebrating your wins, encouraging you when you're on track, and providing supportive guidance when you go over. No judgment, just motivation!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Alternative Method - External AI -->
+    <section class="guide-section">
+      <h2><i class="bi bi-lightbulb me-2"></i>Alternative: External AI + Import</h2>
+      <p class="text-muted mb-3">If you prefer using ChatGPT, Claude, or another AI assistant:</p>
       <div class="workflow-steps">
         <div class="workflow-step">
           <div class="step-number">1</div>
@@ -170,7 +212,7 @@ I'll start telling you what I ate and did. Ready?</div>
             <tr>
               <td><code>remarks</code></td>
               <td><span class="badge bg-secondary">No</span></td>
-              <td>Daily notes or summary</td>
+              <td>Daily notes, summary, or coach feedback</td>
             </tr>
             <tr class="section-header"><td colspan="3">Food Items (use "food" or "dietary")</td></tr>
             <tr>
@@ -617,6 +659,41 @@ I'll start telling you what I ate and did. Ready?</div>
   font-size: 0.85rem;
   color: var(--text-muted, #6b7280);
   margin: 0;
+}
+
+/* Coach Feature Card */
+.coach-feature-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(52, 211, 153, 0.05));
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 0.75rem;
+}
+
+.coach-feature-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #10b981, #34d399);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.coach-feature-text h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #10b981;
+  margin-bottom: 0.5rem;
+}
+
+.coach-feature-text p {
+  font-size: 0.9rem;
+  color: var(--text-muted, #6b7280);
 }
 
 /* Cheeky Note */

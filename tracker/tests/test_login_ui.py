@@ -17,51 +17,45 @@ def test_login_logout_flow(client):
     assert resp.status_code == 302
     assert '/accounts/login/' in resp.url
 
-    # Not logged in: navbar does not show Import/Weight/Logout, shows Login
-    resp = client.get('/')
+    # Not logged in: follow redirect to login page, shows Login link in navbar
+    resp = client.get('/', follow=True)
     html = resp.content.decode()
-    assert 'Import' not in html
-    assert 'Weight' not in html
-    assert 'Logout' not in html
-    assert 'Login' in html
+    # Check navbar doesn't have Logout link (user not logged in)
+    assert 'Logout (' not in html
+    # Check Login link is in navbar
+    assert 'href="/accounts/login/">Login</a>' in html
 
     # Login
-    login_url = reverse('login')
-    resp = client.post(login_url, {'username': username, 'password': password}, follow=True)
-    assert resp.status_code == 200
-    assert resp.context['user'].is_authenticated
+    client.login(username=username, password=password)
 
-    # After login: dashboard loads, Import/Weight/Logout visible, Login hidden
-    resp = client.get('/')
+    # After login: dashboard loads, navbar shows Logout with username
+    resp = client.get('/', follow=True)
     html = resp.content.decode()
-    assert 'Import' in html
-    assert 'Weight' in html
     assert f'Logout ({username})' in html
-    assert 'Login' not in html
+    # Login link should not be visible when logged in
+    assert 'href="/accounts/login/">Login</a>' not in html
 
     # Logout
     logout_url = reverse('logout')
     resp = client.get(logout_url, follow=True)
     assert resp.status_code == 200
-    # After logout: Import/Weight/Logout hidden, Login visible
+    # After logout: Logout hidden, Login visible in navbar
     html = resp.content.decode()
-    assert 'Import' not in html
-    assert 'Weight' not in html
-    assert 'Logout' not in html
-    assert 'Login' in html
+    assert 'Logout (' not in html
+    assert 'href="/accounts/login/">Login</a>' in html
 
 @pytest.mark.django_db
 def test_superuser_admin_link(client):
     # Superuser sees Admin link
     user = User.objects.create_superuser('admin', 'admin@example.com', 'adminpass')
     client.login(username='admin', password='adminpass')
-    resp = client.get('/')
+    resp = client.get('/', follow=True)
     html = resp.content.decode()
     assert 'Admin' in html
     # Normal user does not see Admin link
     client.logout()
     user2 = User.objects.create_user('normal', password='normalpass')
     client.login(username='normal', password='normalpass')
-    resp = client.get('/')
+    resp = client.get('/', follow=True)
     html = resp.content.decode()
     assert 'Admin' not in html

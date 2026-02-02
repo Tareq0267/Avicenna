@@ -1,8 +1,13 @@
+# Core Django
+Django==4.2.27
 
-Django>=4.2,<5
-python-dateutil>=2.8
-python-dotenv>=1.0
+# Environment variables
+python-dotenv==1.2.1
 
-# Testing
-pytest>=7.0
-pytest-django>=4.5
+# AI Integration
+openai==2.16.0
+
+# Testing (optional - only needed for development)
+pytest==8.0.0
+pytest-django==4.8.0
+python-dateutil==2.9.0.post0

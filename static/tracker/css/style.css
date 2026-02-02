@@ -343,3 +343,231 @@ body {
     text-overflow: ellipsis;
   }
 }
+
+/* ===== Couples Mode / Partner View Styles ===== */
+
+/* Partner Banner (shown when viewing partner's dashboard) */
+.partner-banner {
+  background: linear-gradient(135deg, #ec4899, #f472b6);
+  border-radius: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 4px 20px rgba(236, 72, 153, 0.25);
+  animation: slideInBanner 0.4s ease-out;
+}
+
+@keyframes slideInBanner {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.partner-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.partner-banner-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: #fff;
+  animation: heartbeat 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.partner-banner-text {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.partner-banner-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.partner-banner-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.partner-banner-btn {
+  flex-shrink: 0;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  color: #ec4899;
+  border: none;
+  transition: all 0.2s;
+}
+
+.partner-banner-btn:hover {
+  background: #fff;
+  color: #db2777;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Partner Toggle Card (shown on own dashboard when partner is linked) */
+.partner-toggle-wrapper {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.partner-toggle-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, #fdf2f8, #fce7f3);
+  border: 2px solid #f9a8d4;
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.partner-toggle-card:hover {
+  background: linear-gradient(135deg, #fce7f3, #fbcfe8);
+  border-color: #ec4899;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(236, 72, 153, 0.2);
+  text-decoration: none;
+}
+
+.partner-toggle-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #ec4899, #f472b6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: #fff;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.partner-toggle-card:hover .partner-toggle-icon {
+  animation: heartbeat 0.8s ease-in-out infinite;
+}
+
+.partner-toggle-text {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.partner-toggle-label {
+  font-size: 0.7rem;
+  color: #be185d;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.partner-toggle-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #831843;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.partner-toggle-arrow {
+  width: 32px;
+  height: 32px;
+  background: rgba(236, 72, 153, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ec4899;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.partner-toggle-card:hover .partner-toggle-arrow {
+  background: #ec4899;
+  color: #fff;
+  transform: translateX(3px);
+}
+
+/* Mobile adjustments for partner mode */
+@media (max-width: 576px) {
+  .partner-banner {
+    padding: 0.875rem 1rem;
+  }
+
+  .partner-banner-content {
+    gap: 0.75rem;
+  }
+
+  .partner-banner-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .partner-banner-name {
+    font-size: 1rem;
+  }
+
+  .partner-banner-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .partner-toggle-card {
+    padding: 0.875rem 1rem;
+    gap: 0.75rem;
+  }
+
+  .partner-toggle-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .partner-toggle-name {
+    font-size: 0.9rem;
+  }
+
+  .partner-toggle-arrow {
+    width: 28px;
+    height: 28px;
+  }
+}

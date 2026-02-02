@@ -2,6 +2,359 @@
 {% load static %}
 
 {% block content %}
+<!-- Special Love Letter Modal for Qaisara -->
+{% if FOR_HER %}
+<div class="modal fade" id="loveLetterModal" tabindex="-1" aria-labelledby="loveLetterModalLabel" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content love-letter-content">
+      <div class="love-letter-envelope">
+        <div class="envelope-heart"><i class="bi bi-heart-fill"></i></div>
+      </div>
+      <div class="modal-header love-letter-header">
+        <h5 class="modal-title" id="loveLetterModalLabel">
+          <i class="bi bi-envelope-heart-fill me-2"></i>A Letter For You
+        </h5>
+      </div>
+      <div class="modal-body love-letter-body">
+        <p class="love-greeting">Hii my cutiepie Qaisara <i class="bi bi-heart-fill text-danger"></i></p>
+        <p class="love-message">
+          Since you are one of the most loyal Avicenna member, I have given you a special version of this app.
+          For you only, it's <strong>Avicenna<i class="bi bi-heart-fill text-danger ms-1"></i></strong>
+        </p>
+        <div class="love-benefits">
+          <p class="benefits-title"><i class="bi bi-gift-fill me-2"></i>Benefits:</p>
+          <p class="benefit-item">
+            <i class="bi bi-check-heart-fill text-success me-2"></i>
+            You are given <strong>UNOBSTRUCTED</strong> use of the AI feature <i class="bi bi-heart-fill text-danger"></i>
+          </p>
+          <p class="cute-warning">
+            <i class="bi bi-emoji-heart-eyes me-1"></i> Remember to not overuse it okay sayang~
+          </p>
+        </div>
+        <div class="love-signature">
+          <p class="love-closing">Love you <i class="bi bi-hearts text-danger"></i></p>
+          <p class="love-name">Tareq</p>
+          <p class="love-titles">(your beloved boyfriend / future husband / your date / your love / your bam bam boy)</p>
+        </div>
+      </div>
+      <div class="modal-footer love-letter-footer">
+        <button type="button" class="btn btn-love" data-bs-dismiss="modal">
+          <i class="bi bi-heart-fill me-2"></i>I Love You Too!
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Love Letter Modal Styles */
+.love-letter-content {
+  background: linear-gradient(135deg, #fff5f8 0%, #ffe4ec 100%);
+  border: 3px solid #ff69b4;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(255, 105, 180, 0.3);
+  overflow: visible;
+  position: relative;
+}
+
+.love-letter-envelope {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #ff69b4, #ff1493);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
+  animation: heartPulse 1.5s ease-in-out infinite;
+}
+
+.envelope-heart i {
+  font-size: 1.8rem;
+  color: white;
+}
+
+@keyframes heartPulse {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.1); }
+}
+
+.love-letter-header {
+  background: transparent;
+  border-bottom: 2px dashed #ffb6c1;
+  padding-top: 40px;
+  text-align: center;
+  justify-content: center;
+}
+
+.love-letter-header .modal-title {
+  color: #ff1493;
+  font-family: 'Georgia', serif;
+  font-size: 1.5rem;
+}
+
+.love-letter-body {
+  padding: 1.5rem 2rem;
+  font-family: 'Georgia', serif;
+  color: #8b4567;
+  line-height: 1.8;
+}
+
+.love-greeting {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #ff1493;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.love-message {
+  font-size: 1rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.love-benefits {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 15px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px dashed #ff69b4;
+}
+
+.benefits-title {
+  color: #ff1493;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.benefit-item {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.cute-warning {
+  font-size: 0.9rem;
+  color: #ff69b4;
+  font-style: italic;
+  text-align: center;
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
+.love-signature {
+  text-align: right;
+  padding-top: 1rem;
+  border-top: 1px dashed #ffb6c1;
+}
+
+.love-closing {
+  font-size: 1.1rem;
+  margin-bottom: 0.3rem;
+}
+
+.love-name {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #ff1493;
+  font-style: italic;
+  margin-bottom: 0.2rem;
+}
+
+.love-titles {
+  font-size: 0.75rem;
+  color: #c77daa;
+  font-style: italic;
+}
+
+.love-letter-footer {
+  background: transparent;
+  border-top: none;
+  justify-content: center;
+  padding-bottom: 1.5rem;
+}
+
+.btn-love {
+  background: linear-gradient(135deg, #ff69b4, #ff1493);
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
+}
+
+.btn-love:hover {
+  background: linear-gradient(135deg, #ff1493, #ff69b4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 105, 180, 0.5);
+  color: white;
+}
+
+/* Floating hearts animation */
+.love-letter-content::before,
+.love-letter-content::after {
+  content: '\2665';
+  position: absolute;
+  font-size: 1rem;
+  color: #ffb6c1;
+  animation: floatHeart 3s ease-in-out infinite;
+}
+
+.love-letter-content::before {
+  top: 20%;
+  left: -10px;
+  animation-delay: 0s;
+}
+
+.love-letter-content::after {
+  top: 60%;
+  right: -10px;
+  animation-delay: 1.5s;
+}
+
+@keyframes floatHeart {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.6; }
+  50% { transform: translateY(-10px) rotate(10deg); opacity: 1; }
+}
+</style>
+
+<script>
+// Show love letter modal on first visit (per session)
+document.addEventListener('DOMContentLoaded', function() {
+  const loveLetterShown = sessionStorage.getItem('loveLetterShown');
+  if (!loveLetterShown) {
+    const loveModal = new bootstrap.Modal(document.getElementById('loveLetterModal'));
+    loveModal.show();
+    sessionStorage.setItem('loveLetterShown', 'true');
+  }
+});
+</script>
+{% endif %}
+<!-- Partner Mode Banner (when viewing partner's dashboard) -->
+{% if viewing_partner %}
+<div class="partner-banner">
+  <div class="partner-banner-content">
+    <div class="partner-banner-icon">
+      <i class="bi bi-heart-fill"></i>
+    </div>
+    <div class="partner-banner-text">
+      <span class="partner-banner-label">Peeking at</span>
+      <span class="partner-banner-name">{{ partner_name }}'s Journey</span>
+    </div>
+    <a href="{% url 'tracker:dashboard' %}" class="btn btn-sm btn-light partner-banner-btn">
+      <i class="bi bi-arrow-left me-1"></i>Back to Mine
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- Partner Toggle Card (only show if user has a partner and viewing own dashboard) -->
+{% if partner and not viewing_partner %}
+<div class="partner-toggle-wrapper mb-3">
+  <a href="{% url 'tracker:partner_dashboard' %}" class="partner-toggle-card">
+    <div class="partner-toggle-icon">
+      <i class="bi bi-heart-fill"></i>
+    </div>
+    <div class="partner-toggle-text">
+      <span class="partner-toggle-label">Couples Mode</span>
+      <span class="partner-toggle-name">Peek at {{ partner_name }}'s progress</span>
+    </div>
+    <div class="partner-toggle-arrow">
+      <i class="bi bi-chevron-right"></i>
+    </div>
+  </a>
+</div>
+{% endif %}
+
+<!-- Calorie Setup Prompt (show if profile not complete and not viewing partner) -->
+{% if not calorie_profile_complete and not viewing_partner %}
+<div class="calorie-setup-prompt mb-4">
+  <div class="setup-prompt-content">
+    <div class="setup-prompt-icon">
+      <i class="bi bi-bullseye"></i>
+    </div>
+    <div class="setup-prompt-text">
+      <strong>Set up your calorie goal</strong>
+      <p class="mb-0 text-muted">Get personalized daily calorie targets based on your fitness goals</p>
+    </div>
+    <a href="{% url 'tracker:calorie_setup' %}" class="btn btn-primary">
+      <i class="bi bi-gear me-1"></i>Set Up Now
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- Calorie Goal Card (show if profile is complete) -->
+{% if calorie_status %}
+<div class="calorie-goal-card mb-4">
+  <div class="row align-items-center">
+    <div class="col-md-8">
+      <div class="calorie-header">
+        <div class="calorie-icon {% if calorie_status.fitness_goal == 'lose' %}lose{% elif calorie_status.fitness_goal == 'gain' %}gain{% else %}maintain{% endif %}">
+          {% if calorie_status.fitness_goal == 'lose' %}
+          <i class="bi bi-arrow-down-circle"></i>
+          {% elif calorie_status.fitness_goal == 'gain' %}
+          <i class="bi bi-arrow-up-circle"></i>
+          {% else %}
+          <i class="bi bi-arrow-left-right"></i>
+          {% endif %}
+        </div>
+        <div class="calorie-title">
+          {% if calorie_status.fitness_goal == 'lose' %}
+          <h5 class="mb-0">Calories Left Today</h5>
+          <small class="text-muted">Stay under your goal to lose weight</small>
+          {% elif calorie_status.fitness_goal == 'gain' %}
+          <h5 class="mb-0">Calories to Surpass</h5>
+          <small class="text-muted">Exceed your goal to gain weight</small>
+          {% else %}
+          <h5 class="mb-0">Calorie Target</h5>
+          <small class="text-muted">Stay close to maintain your weight</small>
+          {% endif %}
+        </div>
+      </div>
+      <div class="calorie-progress mt-3">
+        <div class="progress" style="height: 12px; border-radius: 6px;">
+          <div class="progress-bar {% if calorie_status.status == 'under' %}bg-success{% elif calorie_status.status == 'on_track' %}bg-warning{% else %}bg-danger{% endif %}"
+               role="progressbar"
+               style="width: {{ calorie_status.progress_percent }}%;"
+               aria-valuenow="{{ calorie_status.calories_consumed }}"
+               aria-valuemin="0"
+               aria-valuemax="{{ calorie_status.daily_goal }}">
+          </div>
+        </div>
+        <div class="d-flex justify-content-between mt-1">
+          <small class="text-muted">{{ calorie_status.calories_consumed }} consumed</small>
+          <small class="text-muted">{{ calorie_status.daily_goal }} goal</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 text-center">
+      <div class="calorie-remaining {% if calorie_status.status == 'under' %}text-success{% elif calorie_status.status == 'on_track' %}text-warning{% else %}text-danger{% endif %}">
+        {% if calorie_status.calories_remaining >= 0 %}
+        <span class="calorie-number">{{ calorie_status.calories_remaining }}</span>
+        <span class="calorie-label">kcal {% if calorie_status.fitness_goal == 'gain' %}to go{% else %}left{% endif %}</span>
+        {% else %}
+        <span class="calorie-number">{{ calorie_status.calories_remaining|slice:"1:" }}</span>
+        <span class="calorie-label">kcal {% if calorie_status.fitness_goal == 'gain' %}over - great!{% else %}over{% endif %}</span>
+        {% endif %}
+      </div>
+      {% if not viewing_partner %}
+      <button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-bs-toggle="modal" data-bs-target="#calorieSettingsModal">
+        <i class="bi bi-gear"></i> Settings
+      </button>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <!-- Activity Heatmap -->
 <div class="row mb-4">
   <div class="col-12">
@@ -244,16 +597,15 @@
             <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-speedometer2 me-2"></i>Weight</h6>
             <div id="recapWeightList"></div>
           </div>
-        </div>
-        <!-- Remarks Section -->
-        <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-chat-quote me-2"></i>Remarks</h6>
-        <div id="recapRemarksSection" class="mb-4">
-          <div id="recapRemarksContent" class="d-none">
-            <div class="alert alert-info p-2 mb-0" id="recapRemarksText"></div>
+
+          <!-- Coach Feedback / Remarks Section -->
+          <div id="recapRemarksSection" class="mb-4">
+            <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-person-heart me-2"></i>Coach Feedback</h6>
+            <div id="recapRemarksContent" class="d-none"></div>
+            <div id="recapRemarksEmpty" class="text-muted">No coach feedback for this day.</div>
           </div>
-          <div id="recapRemarksEmpty" class="text-muted">No remarks for this day.</div>
         </div>
-         
+
         <div id="recapEmpty" class="d-none text-center py-4 text-muted">
           <i class="bi bi-inbox fs-1 d-block mb-2"></i>
           No entries for this day.
@@ -265,6 +617,201 @@
     </div>
   </div>
 </div>
+
+<!-- Calorie Settings Modal -->
+{% if calorie_status and not viewing_partner %}
+<div class="modal fade" id="calorieSettingsModal" tabindex="-1" aria-labelledby="calorieSettingsModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="calorieSettingsModalLabel"><i class="bi bi-gear me-2"></i>Calorie Settings</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="calorieSettingsForm" method="post" action="{% url 'tracker:update_calorie_settings' %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Goal</label>
+            <select name="fitness_goal" class="form-select">
+              <option value="lose" {% if calorie_status.fitness_goal == 'lose' %}selected{% endif %}>Lose Weight</option>
+              <option value="maintain" {% if calorie_status.fitness_goal == 'maintain' %}selected{% endif %}>Maintain Weight</option>
+              <option value="gain" {% if calorie_status.fitness_goal == 'gain' %}selected{% endif %}>Gain Weight</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Activity Level</label>
+            <select name="activity_level" class="form-select">
+              <option value="sedentary">Sedentary (little or no exercise)</option>
+              <option value="light">Lightly Active (1-3 days/week)</option>
+              <option value="moderate">Moderately Active (3-5 days/week)</option>
+              <option value="active">Very Active (6-7 days/week)</option>
+              <option value="extra">Extra Active (very active + physical job)</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Age</label>
+            <input type="number" name="age" class="form-control" min="10" max="120">
+          </div>
+          <div class="alert alert-info py-2">
+            <small><i class="bi bi-info-circle me-1"></i>Your calorie goal will be recalculated based on your latest weight entry.</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<style>
+/* Calorie Setup Prompt */
+.calorie-setup-prompt {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(129, 140, 248, 0.05));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 1rem;
+  padding: 1.25rem;
+}
+
+.setup-prompt-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.setup-prompt-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #6366f1, #818cf8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #fff;
+}
+
+.setup-prompt-text {
+  flex: 1;
+  min-width: 200px;
+}
+
+.setup-prompt-text strong {
+  font-size: 1.1rem;
+  color: var(--text, #1f2937);
+}
+
+/* Calorie Goal Card */
+.calorie-goal-card {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, #e9ecef);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.calorie-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.calorie-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.calorie-icon.lose {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.calorie-icon.gain {
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+.calorie-icon.maintain {
+  background: #f0fdf4;
+  color: #22c55e;
+}
+
+.calorie-remaining {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.calorie-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.calorie-label {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* Progress bar styling */
+.calorie-progress .progress {
+  background: #e9ecef;
+}
+
+/* Coach Recap Card */
+.coach-recap-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(52, 211, 153, 0.05));
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 0.75rem;
+}
+
+.coach-recap-avatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #10b981, #34d399);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.coach-recap-message {
+  color: var(--text, #1f2937);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .calorie-goal-card .col-md-4 {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+  }
+
+  .setup-prompt-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .setup-prompt-content .btn {
+    width: 100%;
+  }
+}
+</style>
 
 <!-- ECharts -->
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
@@ -280,6 +827,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const heatmapStart = '{{ heatmap_start }}';
   const heatmapEnd = '{{ heatmap_end }}';
   const todayStr = '{{ today }}';
+  const viewingPartner = {{ viewing_partner|yesno:"true,false" }};
+  const targetUserId = {{ target_user.id }};
+  const dailyCalorieGoal = {% if calorie_status %}{{ calorie_status.daily_goal }}{% else %}null{% endif %};
+  const fitnessGoal = {% if calorie_status %}'{{ calorie_status.fitness_goal }}'{% else %}null{% endif %};
 
   const tooltipStyle = { trigger: 'axis', backgroundColor: '#fff', borderColor: '#e5e5e5', textStyle: { color: '#333' } };
   const gridStyle = { left: '3%', right: '4%', bottom: '3%', containLabel: true };
@@ -304,14 +855,15 @@ document.addEventListener('DOMContentLoaded', function() {
   
   function updateHeatmapRange() {
     const today = new Date(todayStr);
-    
+
     // Calculate start date based on offset
     const startMonth = new Date(today.getFullYear(), today.getMonth() + heatmapOffset, 1);
     const endMonth = new Date(startMonth.getFullYear(), startMonth.getMonth() + monthsToShow - 1, 1);
     const endDate = new Date(endMonth.getFullYear(), endMonth.getMonth() + 1, 0); // Last day of end month
-    
-    const rangeStartStr = startMonth.toISOString().split('T')[0];
-    const rangeEndStr = endDate.toISOString().split('T')[0];
+
+    // Build date strings without timezone conversion
+    const rangeStartStr = `${startMonth.getFullYear()}-${String(startMonth.getMonth() + 1).padStart(2, '0')}-01`;
+    const rangeEndStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
     
     // Update range label
     const rangeLabel = document.getElementById('heatmapRange');
@@ -320,13 +872,30 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       rangeLabel.textContent = getMonthName(startMonth) + ' - ' + getMonthName(endMonth);
     }
-    
-    // Generate data for this range
+
+    // Generate data for this range - explicitly create entry for each day in month
     const rangeData = [];
-    for (let d = new Date(startMonth); d <= endDate; d.setDate(d.getDate() + 1)) {
-      const dateStr = d.toISOString().split('T')[0];
-      const count = activityMap[dateStr] || 0;
-      rangeData.push([dateStr, count]);
+    const targetYear = startMonth.getFullYear();
+    const targetMonth = startMonth.getMonth();
+
+    // Loop through each day of the target month(s)
+    for (let m = 0; m < monthsToShow; m++) {
+      // Use Date object to handle month/year rollovers correctly
+      const monthDate = new Date(targetYear, targetMonth + m, 1);
+      const year = monthDate.getFullYear();
+      const month = monthDate.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        // Build date string directly to avoid timezone conversion issues
+        const yearStr = String(year);
+        const monthStr = String(month + 1).padStart(2, '0');
+        const dayStr = String(day).padStart(2, '0');
+        const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
+
+        const count = activityMap[dateStr] || 0;
+        rangeData.push([dateStr, count]);
+      }
     }
     
     // Check if today is in this range for highlighting
@@ -439,13 +1008,36 @@ document.addEventListener('DOMContentLoaded', function() {
   if (calValues.length === 0 || calValues.every(v => v === 0)) {
     document.getElementById('calChartEmpty').classList.remove('d-none');
   } else {
+    const calSeriesConfig = {
+      data: calValues,
+      type: 'line',
+      smooth: true,
+      lineStyle: { width: 3, color: '#6366f1' },
+      areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(99,102,241,0.35)' }, { offset: 1, color: 'rgba(99,102,241,0.05)' }]) },
+      symbol: 'circle',
+      symbolSize: 8,
+      itemStyle: { color: '#6366f1' }
+    };
+    // Add calorie goal line if available (color based on fitness goal)
+    if (dailyCalorieGoal) {
+      // Red for deficit (lose), Green for surplus (gain), Amber for maintain
+      const goalLineColor = fitnessGoal === 'gain' ? '#10b981' : fitnessGoal === 'lose' ? '#ef4444' : '#f59e0b';
+      const goalLabel = fitnessGoal === 'gain' ? 'Target: {c} kcal' : fitnessGoal === 'lose' ? 'Limit: {c} kcal' : 'Goal: {c} kcal';
+      calSeriesConfig.markLine = {
+        silent: true,
+        symbol: 'none',
+        lineStyle: { color: goalLineColor, width: 2, type: 'dashed' },
+        label: { formatter: goalLabel, position: 'insideEndTop', color: goalLineColor, fontSize: 11 },
+        data: [{ yAxis: dailyCalorieGoal }]
+      };
+    }
     calChart.setOption({
       tooltip: tooltipStyle,
       grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
       xAxis: { type: 'category', data: calDates, axisLine: { lineStyle: { color: '#ddd' } }, axisLabel: { color: '#666' } },
       yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f0f0f0' } }, axisLabel: { color: '#666' } },
       dataZoom: [{ type: 'slider', start: calDates.length > 7 ? 100 - (7 / calDates.length * 100) : 0, end: 100, height: 20, bottom: 5, borderColor: '#e9ecef', fillerColor: 'rgba(99,102,241,0.1)', handleStyle: { color: '#6366f1' } }],
-      series: [{ data: calValues, type: 'line', smooth: true, lineStyle: { width: 3, color: '#6366f1' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(99,102,241,0.35)' }, { offset: 1, color: 'rgba(99,102,241,0.05)' }]) }, symbol: 'circle', symbolSize: 8, itemStyle: { color: '#6366f1' } }]
+      series: [calSeriesConfig]
     });
   }
 
@@ -481,6 +1073,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
   window.addEventListener('resize', function() { heatmapChart.resize(); calChart.resize(); exChart.resize(); wtChart.resize(); });
 
+  // ---------- Calorie Settings Form ----------
+  const calorieSettingsForm = document.getElementById('calorieSettingsForm');
+  if (calorieSettingsForm) {
+    calorieSettingsForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(calorieSettingsForm);
+      const submitBtn = calorieSettingsForm.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+
+      fetch(calorieSettingsForm.action, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Reload page to show updated calorie goal
+          window.location.reload();
+        } else {
+          alert(data.error || 'Failed to update settings');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Save Changes';
+        }
+      })
+      .catch(error => {
+        alert('Network error. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save Changes';
+      });
+    });
+  }
+
   // ---------- Daily Recap Modal ----------
   function showDailyRecap(dateStr) {
     const modal = new bootstrap.Modal(document.getElementById('dailyRecapModal'));
@@ -500,9 +1126,13 @@ document.addEventListener('DOMContentLoaded', function() {
     recapEmpty.classList.add('d-none');
     
     modal.show();
-    
-    // Fetch daily data
-    fetch('/tracker/daily-recap/' + dateStr + '/')
+
+    // Fetch daily data (include user ID if viewing partner's data)
+    let recapUrl = '/tracker/daily-recap/' + dateStr + '/';
+    if (viewingPartner) {
+      recapUrl = '/tracker/daily-recap/' + dateStr + '/user/' + targetUserId + '/';
+    }
+    fetch(recapUrl)
       .then(response => response.json())
       .then(data => {
         recapLoading.classList.add('d-none');
@@ -578,21 +1208,25 @@ document.addEventListener('DOMContentLoaded', function() {
           weightSection.classList.add('d-none');
         }
         
-        // Remarks Section
-        const remarksSection = document.getElementById('recapRemarksSection');
+        // Coach Feedback / Remarks Section
         const remarksContent = document.getElementById('recapRemarksContent');
-        const remarksText = document.getElementById('recapRemarksText');
         const remarksEmpty = document.getElementById('recapRemarksEmpty');
-        let remarks = (data.remarks && data.remarks.trim() !== "") ? data.remarks : "";
-        if (!remarks) {
-          if (data.dietary && data.dietary.length > 0 && data.dietary[0].remarks) {
-            remarks = data.dietary[0].remarks;
-          } else if (data.exercise && data.exercise.length > 0 && data.exercise[0].remarks) {
-            remarks = data.exercise[0].remarks;
-          }
-        }
-        if (remarks && remarks.trim() !== "") {
-          remarksText.textContent = remarks;
+        const allRemarks = data.all_remarks || [];
+
+        // Clear previous content
+        remarksContent.innerHTML = '';
+
+        if (allRemarks.length > 0) {
+          // Build coach cards for each remark
+          allRemarks.forEach(remark => {
+            const card = document.createElement('div');
+            card.className = 'coach-recap-card mb-2';
+            card.innerHTML = `
+              <div class="coach-recap-avatar"><i class="bi bi-person-heart"></i></div>
+              <div class="coach-recap-message">${remark}</div>
+            `;
+            remarksContent.appendChild(card);
+          });
           remarksContent.classList.remove('d-none');
           remarksEmpty.classList.add('d-none');
         } else {

@@ -8,9 +8,6 @@ load_dotenv(BASE_DIR / '.env')
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'insecure-default-key')
 
-# Cutesy mode for Qaisara - set FOR_HER=true in .env to enable personalized wording
-FOR_HER = os.environ.get('FOR_HER', 'false').lower() == 'true'
-
 DEBUG = True  # Set to False in production
 # SECURE_SSL_REDIRECT = not DEBUG
 # SESSION_COOKIE_SECURE = not DEBUG
@@ -18,9 +15,6 @@ DEBUG = True  # Set to False in production
 # SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 # SECURE_BROWSER_XSS_FILTER = True
 # SECURE_CONTENT_TYPE_NOSNIFF = True
-
-TIME_ZONE = "Asia/Kuala_Lumpur"
-USE_TZ = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost','cybilcut.pythonanywhere.com']
 
@@ -99,7 +93,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kuala_Lumpur'
 
 USE_I18N = True
 
@@ -110,3 +104,8 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# AI Food Logging Rate Limits (to protect API costs)
+AI_HOURLY_LIMIT = 2    # Requests per hour per user
+AI_DAILY_LIMIT = 10     # Requests per day per user
+AI_MONTHLY_LIMIT = 30  # Requests per month per user
