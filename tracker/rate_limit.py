@@ -39,9 +39,9 @@ def check_rate_limit(user):
     # Special users have unlimited access
     if is_special_user(user):
         return True, None, {
-            'hourly_remaining': float('inf'),
-            'daily_remaining': float('inf'),
-            'monthly_remaining': float('inf'),
+            'hourly_remaining': 999999,
+            'daily_remaining': 999999,
+            'monthly_remaining': 999999,
             'unlimited': True,
         }
 
