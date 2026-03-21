@@ -16,10 +16,12 @@ DEBUG = True  # Set to False in production
 # SECURE_BROWSER_XSS_FILTER = True
 # SECURE_CONTENT_TYPE_NOSNIFF = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost','cybilcut.pythonanywhere.com']
+NGROK_URL = os.environ.get('NGROK_URL', 'https://example.ngrok.io')  # Default for testing
+
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost','cybilcut.pythonanywhere.com', NGROK_URL.replace('https://', '')]
 
 # For ngrok testing - allows CSRF to work with ngrok URLs
-# CSRF_TRUSTED_ORIGINS = ['.ngrok-free.app']
+CSRF_TRUSTED_ORIGINS = [NGROK_URL]
 
 INSTALLED_APPS = [
     'django.contrib.admin',

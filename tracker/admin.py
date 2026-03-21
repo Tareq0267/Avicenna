@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth import get_user_model
 from django.utils.html import format_html
-from .models import DietaryEntry, ExerciseEntry, WeightEntry, UserProfile, AIUsage
+from .models import DietaryEntry, ExerciseEntry, WeightEntry, UserProfile, AIUsage, Routine, CompletionRecord
 
 User = get_user_model()
 
@@ -85,3 +85,19 @@ class AIUsageAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         """Make records read-only."""
         return False
+
+
+@admin.register(Routine)
+class RoutineAdmin(admin.ModelAdmin):
+    list_display = ('user', 'name', 'schedule_type', 'is_active', 'created_at')
+    list_filter = ('schedule_type', 'is_active', 'user')
+    search_fields = ('name', 'description')
+
+
+@admin.register(CompletionRecord)
+class CompletionRecordAdmin(admin.ModelAdmin):
+    list_display = ('user', 'routine', 'date', 'completed_at')
+    list_filter = ('date', 'user')
+    date_hierarchy = 'date'
+
+

@@ -47,6 +47,9 @@ User's Fitness Profile:
 - Calories consumed today so far: {calories_today} kcal
 - Calories remaining: {calories_remaining} kcal
 
+Today's Routine Progress:
+{routine_summary}
+
 When given a description of food eaten and/or exercise performed, extract the information AND provide personalized coach feedback.
 
 Output format:
@@ -76,6 +79,12 @@ Coach Feedback Guidelines:
 - For MAINTAIN goal:
   * If they're close to target: Praise balance ("Perfect balance today! You're right on track.")
   * If significantly over/under: Gentle course correction
+
+- For ROUTINES:
+  * If they've completed all routines: Celebrate their consistency!
+  * If some are done: Acknowledge progress and gently encourage the rest
+  * If none are done: Don't nag — just weave in a light mention if relevant
+  * Only mention routines briefly (1 sentence max) — food/exercise feedback is the priority
 
 Always be:
 - Supportive and positive
@@ -133,12 +142,24 @@ class AIFoodLogService:
                 'maintain': 'maintain'
             }.get(self.user_context['goal'], 'maintain')
 
+            # Build routine summary
+            routines = self.user_context.get('routines')
+            if routines and routines['total'] > 0:
+                lines = [f"{routines['completed']}/{routines['total']} completed today:"]
+                for item in routines['items']:
+                    status = 'Done' if item['done'] else 'Not yet'
+                    lines.append(f"  - {item['name']}: {status}")
+                routine_summary = '\n'.join(lines)
+            else:
+                routine_summary = 'No routines scheduled today.'
+
             return FOOD_LOG_SYSTEM_PROMPT_WITH_COACH.format(
                 today=today_str,
                 goal=goal_display,
                 daily_calorie_goal=self.user_context.get('daily_calorie_goal', 2000),
                 calories_today=self.user_context.get('calories_today', 0),
-                calories_remaining=self.user_context.get('calories_remaining', 2000)
+                calories_remaining=self.user_context.get('calories_remaining', 2000),
+                routine_summary=routine_summary,
             )
 
         # Fall back to basic prompt

@@ -65,7 +65,7 @@ from django.db.models import Sum, Count, Max
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
-from .models import DietaryEntry, ExerciseEntry, WeightEntry, UserProfile
+from .models import DietaryEntry, ExerciseEntry, WeightEntry, UserProfile, Routine, CompletionRecord
 
 from django.utils import timezone
 from datetime import timedelta, datetime
@@ -84,6 +84,36 @@ def get_partner(user):
         return None
 
 
+def _get_routine_streak(routine, user, today):
+    """Calculate consecutive days of completion for a routine, ending at today or yesterday."""
+    completion_dates = set(
+        CompletionRecord.objects.filter(routine=routine, user=user, date__lte=today)
+        .order_by('-date')
+        .values_list('date', flat=True)[:60]  # Look back max 60 days
+    )
+    if not completion_dates:
+        return 0
+
+    # Start from today — if not completed today, start from yesterday
+    check_date = today
+    if check_date not in completion_dates:
+        check_date = today - timedelta(days=1)
+        if check_date not in completion_dates:
+            return 0
+
+    streak = 0
+    while check_date in completion_dates:
+        # Only count days where the routine was scheduled
+        if routine.is_scheduled_for(check_date):
+            streak += 1
+        check_date -= timedelta(days=1)
+        # Skip days where routine wasn't scheduled (don't break streak)
+        while not routine.is_scheduled_for(check_date) and (today - check_date).days < 60:
+            check_date -= timedelta(days=1)
+
+    return streak
+
+
 @login_required
 @never_cache
 def dashboard(request, view_partner=False):
@@ -98,15 +128,24 @@ def dashboard(request, view_partner=False):
     from .calorie_calculator import get_calorie_status
     calorie_status = get_calorie_status(target_user)
 
-    # Find the most recent entry date to base charts on actual data
+    # Find the full date range of entries to show all data in charts
+    from django.db.models import Min
+    earliest_dietary = DietaryEntry.objects.filter(user=target_user).aggregate(m=Min('date'))['m']
+    earliest_exercise = ExerciseEntry.objects.filter(user=target_user).aggregate(m=Min('date'))['m']
+    earliest_weight = WeightEntry.objects.filter(user=target_user).aggregate(m=Min('date'))['m']
     latest_dietary = DietaryEntry.objects.filter(user=target_user).aggregate(m=Max('date'))['m']
     latest_exercise = ExerciseEntry.objects.filter(user=target_user).aggregate(m=Max('date'))['m']
     latest_weight = WeightEntry.objects.filter(user=target_user).aggregate(m=Max('date'))['m']
-    latest_dates = [d for d in [latest_dietary, latest_exercise, latest_weight, today] if d]
 
-    if latest_dates:
+    earliest_routine = CompletionRecord.objects.filter(user=target_user).aggregate(m=Min('date'))['m']
+    latest_routine = CompletionRecord.objects.filter(user=target_user).aggregate(m=Max('date'))['m']
+
+    earliest_dates = [d for d in [earliest_dietary, earliest_exercise, earliest_weight, earliest_routine] if d]
+    latest_dates = [d for d in [latest_dietary, latest_exercise, latest_weight, latest_routine, today] if d]
+
+    if earliest_dates:
+        chart_start = min(earliest_dates)
         chart_end = max(latest_dates)
-        chart_start = chart_end - timedelta(days=29)  # 30 days of data for scrollable charts
     else:
         chart_end = today
         chart_start = today - timedelta(days=29)
@@ -162,6 +201,9 @@ def dashboard(request, view_partner=False):
     # count weight entries
     for r in WeightEntry.objects.filter(user=target_user, date__gte=heatmap_start, date__lte=heatmap_end).values('date').annotate(c=Count('id')):
         activity_counts[str(r['date'])] += r['c']
+    # count routine completions
+    for r in CompletionRecord.objects.filter(user=target_user, date__gte=heatmap_start, date__lte=heatmap_end).values('date').annotate(c=Count('id')):
+        activity_counts[str(r['date'])] += r['c']
     # Build list [[date, count], ...]
     heatmap_data = [[d, c] for d, c in activity_counts.items()]
 
@@ -174,6 +216,46 @@ def dashboard(request, view_partner=False):
         calorie_profile_complete = target_user.profile.calorie_profile_complete
     except (AttributeError, UserProfile.DoesNotExist):
         calorie_profile_complete = False
+
+    # Routine data for dashboard card (show for both own and partner views)
+    routine_checklist = []
+    routine_total = 0
+    routine_done = 0
+    routine_icon_choices = []
+    routine_preset_groups = {}
+    routine_existing_presets = set()
+    all_routines = Routine.objects.filter(user=target_user, is_active=True)
+    todays_routines = [r for r in all_routines if r.is_scheduled_for(today)]
+    def _sort_key(r):
+        t = r.get_scheduled_time()
+        return (t if t else '99:99', r.order)
+    todays_routines.sort(key=_sort_key)
+    completed_ids = set(
+        CompletionRecord.objects.filter(user=target_user, date=today)
+        .values_list('routine_id', flat=True)
+    )
+    for routine in todays_routines:
+        routine_checklist.append({
+            'routine': routine,
+            'completed': routine.id in completed_ids,
+            'streak': _get_routine_streak(routine, target_user, today),
+        })
+    routine_total = len(todays_routines)
+    routine_done = len([c for c in routine_checklist if c['completed']])
+    if not viewing_partner:
+        routine_icon_choices = [
+            'bi-check-circle', 'bi-star', 'bi-heart', 'bi-lightning-charge',
+            'bi-book', 'bi-moon-stars', 'bi-sun', 'bi-droplet', 'bi-cup-straw',
+            'bi-bicycle', 'bi-person-walking', 'bi-pencil', 'bi-music-note',
+            'bi-palette', 'bi-code-slash', 'bi-camera', 'bi-chat-dots',
+            'bi-clock', 'bi-trophy',
+        ]
+        from .routine_presets import get_presets_by_group
+        routine_preset_groups = get_presets_by_group()
+        routine_existing_presets = set(
+            Routine.objects.filter(user=request.user, is_active=True, preset_key__gt='')
+            .values_list('preset_key', flat=True)
+        )
 
     context = {
         'dietary_recent': dietary_recent,
@@ -206,6 +288,16 @@ def dashboard(request, view_partner=False):
         # Calorie tracking
         'calorie_status': calorie_status,
         'calorie_profile_complete': calorie_profile_complete,
+        # Routine card
+        'routine_checklist': routine_checklist,
+        'routine_total': routine_total,
+        'routine_done': routine_done,
+        'routine_ring_dash': round(routine_done / routine_total * 97.4, 1) if routine_total > 0 else 0,
+        'routine_icon_choices': routine_icon_choices,
+        'routine_preset_groups': routine_preset_groups,
+        'routine_existing_presets': routine_existing_presets,
+        # Love letter (latest) for special users
+        'latest_love_letter': _get_love_letters()[0],
     }
     return render(request, 'tracker/dashboard.html', context)
 
@@ -385,15 +477,27 @@ def daily_recap(request, date_str, user_id=None):
             'weight_kg', 'notes'
         ))
         
+        # Get routine completions for this date
+        routine_completions = list(
+            CompletionRecord.objects.filter(user=target_user, date=entry_date)
+            .select_related('routine')
+            .order_by('completed_at')
+        )
+        routines = [{
+            'name': rc.routine.name,
+            'icon': rc.routine.icon,
+            'color': rc.routine.color,
+        } for rc in routine_completions]
+
         # Calculate totals
         total_calories_in = sum(d['calories'] or 0 for d in dietary)
         total_calories_burned = sum(e['calories_burned'] or 0 for e in exercise)
         total_exercise_min = sum(e['duration_minutes'] or 0 for e in exercise)
-        
+
         # Convert Decimal to float for JSON serialization
         for w in weight:
             w['weight_kg'] = float(w['weight_kg'])
-        
+
         # Collect all unique non-empty remarks from dietary and exercise entries
         all_remarks = []
         seen_remarks = set()
@@ -418,12 +522,14 @@ def daily_recap(request, date_str, user_id=None):
             'dietary': dietary,
             'exercise': exercise,
             'weight': weight,
+            'routines': routines,
             'all_remarks': all_remarks,
             'summary': {
                 'total_calories_in': total_calories_in,
                 'total_calories_burned': total_calories_burned,
                 'total_exercise_min': total_exercise_min,
-                'net_calories': total_calories_in - total_calories_burned
+                'net_calories': total_calories_in - total_calories_burned,
+                'routines_completed': len(routines),
             }
         })
     except Exception as e:
@@ -479,6 +585,27 @@ def ai_parse_food(request):
                 'calories_today': calorie_status['calories_consumed'],
                 'calories_remaining': calorie_status['calories_remaining']
             }
+
+        # Add routine context for coach feedback
+        today = timezone.now().date()
+        all_routines = Routine.objects.filter(user=request.user, is_active=True)
+        todays_routines = [r for r in all_routines if r.is_scheduled_for(today)]
+        completed_ids = set(
+            CompletionRecord.objects.filter(user=request.user, date=today)
+            .values_list('routine_id', flat=True)
+        )
+        if todays_routines:
+            routine_context = {
+                'total': len(todays_routines),
+                'completed': len([r for r in todays_routines if r.id in completed_ids]),
+                'items': [
+                    {'name': r.name, 'done': r.id in completed_ids}
+                    for r in todays_routines
+                ]
+            }
+            if user_context is None:
+                user_context = {}
+            user_context['routines'] = routine_context
 
         service = AIFoodLogService(user_context=user_context)
 
@@ -798,3 +925,439 @@ def update_calorie_settings(request):
         'message': 'Settings updated!',
         'daily_goal': profile.daily_calorie_goal
     })
+
+
+# ===== Routine Tracker Views =====
+
+@login_required
+def routine_tracker(request):
+    """Main routine tracker page with today's checklist and gamification."""
+    today = timezone.now().date()
+    user = request.user
+
+    # Get user's active routines scheduled for today
+    all_routines = Routine.objects.filter(user=user, is_active=True)
+    todays_routines = [r for r in all_routines if r.is_scheduled_for(today)]
+
+    # Sort by scheduled time, then by order
+    def sort_key(r):
+        t = r.get_scheduled_time()
+        return (t if t else '99:99', r.order)
+    todays_routines.sort(key=sort_key)
+
+    # Get today's completions
+    completed_ids = set(
+        CompletionRecord.objects.filter(user=user, date=today)
+        .values_list('routine_id', flat=True)
+    )
+
+    # Build checklist data
+    checklist = []
+    for routine in todays_routines:
+        checklist.append({
+            'routine': routine,
+            'completed': routine.id in completed_ids,
+            'streak': _get_routine_streak(routine, user, today),
+        })
+
+    total_today = len(todays_routines)
+    done_today = len([c for c in checklist if c['completed']])
+
+    # 7-day history
+    week_history = []
+    for i in range(6, -1, -1):
+        d = today - timedelta(days=i)
+        count = CompletionRecord.objects.filter(user=user, date=d).count()
+        scheduled = len([r for r in all_routines if r.is_scheduled_for(d)])
+        week_history.append({
+            'date': d,
+            'day_name': d.strftime('%a'),
+            'completed': count,
+            'total': scheduled,
+            'is_today': d == today,
+        })
+
+    # Presets
+    from .routine_presets import get_presets_by_group
+    preset_groups = get_presets_by_group()
+
+    # Mark already-added presets
+    existing_preset_keys = set(
+        Routine.objects.filter(user=user, is_active=True, preset_key__gt='')
+        .values_list('preset_key', flat=True)
+    )
+
+    icon_choices = [
+        'bi-check-circle', 'bi-star', 'bi-heart', 'bi-lightning-charge',
+        'bi-book', 'bi-moon-stars', 'bi-sun', 'bi-droplet', 'bi-cup-straw',
+        'bi-bicycle', 'bi-person-walking', 'bi-pencil', 'bi-music-note',
+        'bi-palette', 'bi-code-slash', 'bi-camera', 'bi-chat-dots',
+        'bi-clock', 'bi-trophy',
+    ]
+
+    context = {
+        'checklist': checklist,
+        'total_today': total_today,
+        'done_today': done_today,
+        'progress_percent': round(done_today / total_today * 100) if total_today > 0 else 0,
+        'week_history': week_history,
+        'preset_groups': preset_groups,
+        'existing_preset_keys': existing_preset_keys,
+        'all_routines': all_routines,
+        'icon_choices': icon_choices,
+    }
+    return render(request, 'tracker/routine_tracker.html', context)
+
+
+@login_required
+@require_POST
+def toggle_completion(request, routine_id):
+    """Toggle a routine's completion for today."""
+    try:
+        routine = Routine.objects.get(id=routine_id, user=request.user, is_active=True)
+    except Routine.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Routine not found'}, status=404)
+
+    today = timezone.now().date()
+
+    try:
+        # Already completed - undo it
+        record = CompletionRecord.objects.get(routine=routine, date=today)
+        record.delete()
+        completed = False
+    except CompletionRecord.DoesNotExist:
+        # Mark as completed
+        CompletionRecord.objects.create(
+            routine=routine,
+            user=request.user,
+            date=today,
+        )
+        completed = True
+
+    # Check if all routines are done for confetti burst
+    all_routines = Routine.objects.filter(user=request.user, is_active=True)
+    todays_routines = [r for r in all_routines if r.is_scheduled_for(today)]
+    completed_count = CompletionRecord.objects.filter(user=request.user, date=today).count()
+    all_done = completed_count >= len(todays_routines) and len(todays_routines) > 0
+
+    streak = _get_routine_streak(routine, request.user, today) if completed else 0
+
+    return JsonResponse({
+        'success': True,
+        'completed': completed,
+        'trigger_confetti': completed,
+        'all_done': all_done,
+        'done_today': completed_count,
+        'total_today': len(todays_routines),
+        'streak': streak,
+    })
+
+
+@login_required
+@require_POST
+def add_routine(request):
+    """Create a custom routine."""
+    name = request.POST.get('name', '').strip()
+    if not name:
+        return JsonResponse({'success': False, 'error': 'Name is required'}, status=400)
+
+    schedule_type = request.POST.get('schedule_type', 'daily')
+    schedule_config = {}
+
+    time_val = request.POST.get('time', '').strip()
+    if time_val:
+        schedule_config['time'] = time_val
+
+    if schedule_type == 'weekly':
+        days = request.POST.getlist('days')
+        schedule_config['days'] = [int(d) for d in days if d.isdigit()]
+    elif schedule_type == 'monthly':
+        dates = request.POST.getlist('dates')
+        schedule_config['dates'] = [int(d) for d in dates if d.isdigit()]
+
+    routine = Routine.objects.create(
+        user=request.user,
+        name=name,
+        description=request.POST.get('description', '').strip(),
+        schedule_type=schedule_type,
+        schedule_config=schedule_config,
+        icon=request.POST.get('icon', 'bi-check-circle'),
+        color=request.POST.get('color', '#818cf8'),
+    )
+
+    return JsonResponse({
+        'success': True,
+        'routine_id': routine.id,
+        'message': f'"{routine.name}" added!',
+    })
+
+
+@login_required
+@require_POST
+def edit_routine(request, routine_id):
+    """Update a routine."""
+    try:
+        routine = Routine.objects.get(id=routine_id, user=request.user)
+    except Routine.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Routine not found'}, status=404)
+
+    name = request.POST.get('name', '').strip()
+    if not name:
+        return JsonResponse({'success': False, 'error': 'Name is required'}, status=400)
+
+    routine.name = name
+    routine.description = request.POST.get('description', '').strip()
+    routine.schedule_type = request.POST.get('schedule_type', routine.schedule_type)
+    routine.icon = request.POST.get('icon', routine.icon)
+    routine.color = request.POST.get('color', routine.color)
+
+    schedule_config = {}
+    time_val = request.POST.get('time', '').strip()
+    if time_val:
+        schedule_config['time'] = time_val
+    if routine.schedule_type == 'weekly':
+        days = request.POST.getlist('days')
+        schedule_config['days'] = [int(d) for d in days if d.isdigit()]
+    elif routine.schedule_type == 'monthly':
+        dates = request.POST.getlist('dates')
+        schedule_config['dates'] = [int(d) for d in dates if d.isdigit()]
+    routine.schedule_config = schedule_config
+
+    routine.save()
+    return JsonResponse({'success': True, 'message': f'"{routine.name}" updated!'})
+
+
+@login_required
+@require_POST
+def delete_routine(request, routine_id):
+    """Deactivate a routine (soft delete to preserve history)."""
+    try:
+        routine = Routine.objects.get(id=routine_id, user=request.user)
+    except Routine.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Routine not found'}, status=404)
+
+    routine.is_active = False
+    routine.save()
+    return JsonResponse({'success': True, 'message': f'"{routine.name}" removed.'})
+
+
+@login_required
+@require_POST
+def add_preset(request):
+    """Add a preset routine or an entire group."""
+    from .routine_presets import add_preset_for_user, add_preset_group_for_user
+
+    preset_key = request.POST.get('preset_key', '').strip()
+    group = request.POST.get('group', '').strip()
+
+    if group:
+        created = add_preset_group_for_user(request.user, group)
+        if created:
+            return JsonResponse({
+                'success': True,
+                'message': f'Added {len(created)} routines!',
+                'count': len(created),
+            })
+        return JsonResponse({'success': True, 'message': 'All presets in this group already added.', 'count': 0})
+    elif preset_key:
+        routine = add_preset_for_user(request.user, preset_key)
+        if routine:
+            return JsonResponse({'success': True, 'message': f'"{routine.name}" added!'})
+        return JsonResponse({'success': True, 'message': 'Preset already added.'})
+    else:
+        return JsonResponse({'success': False, 'error': 'No preset specified'}, status=400)
+
+
+@login_required
+@require_POST
+def reorder_routines(request):
+    """Update display order of routines."""
+    try:
+        order_data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+
+    for item in order_data:
+        Routine.objects.filter(id=item['id'], user=request.user).update(order=item['order'])
+
+    return JsonResponse({'success': True})
+
+
+def _get_love_letters():
+    """Return love letter entries for special users (newest first)."""
+    return [
+        {
+            'version': '4',
+            'date': '22 March 2026',
+            'title': 'Your Streaks Are on Fire',
+            'greeting': 'Hii sayang~',
+            'message': "I made your routines even more fun! Now every routine tracks your streak — how many days in a row you've completed it. And I added this cute little progress ring on your dashboard that fills up as you check things off.",
+            'features': [
+                'Fire streak badges on each routine (keep the flame alive!)',
+                'Beautiful circular progress ring on your dashboard',
+                'Smooth satisfying animations when you check things off',
+                'Streaks are smart — weekend off-days won\'t break them',
+            ],
+            'closing': "Every streak you build makes me so proud of you. Keep going, I believe in you!",
+            'sign_off': 'Always yours',
+        },
+        {
+            'version': '3',
+            'date': '22 March 2026',
+            'title': 'Your Routines, My Love',
+            'greeting': 'Hii sayang~',
+            'message': "I added something new just for you! Now you can track your daily routines — Solat, skincare, exercise, everything! And your AI coach knows about them too, so she'll cheer you on.",
+            'features': [
+                'Daily routine tracker on your dashboard',
+                'Pretty pastel color picker for your routines',
+                'AI coach now sees your routine progress',
+                'Your routines show up in the activity heatmap',
+            ],
+            'closing': 'I hope this helps you stay consistent, because you inspire me to be better every day.',
+            'sign_off': 'Always yours',
+        },
+        {
+            'version': '2',
+            'date': '21 March 2026',
+            'title': 'A New Home For You',
+            'greeting': 'Hello my cutiepie~',
+            'message': "I gave Avicenna a makeover! Everything is cleaner and prettier now. The settings page has your own profile with your cute little avatar.",
+            'features': [
+                'Beautiful new settings page with your profile',
+                'Compact routine card right on your dashboard',
+                'Charts now show ALL your data, not just 30 days',
+                'Cleaner navbar — less clutter, more love',
+            ],
+            'closing': "Every pixel was placed with you in mind.",
+            'sign_off': 'Love you always',
+        },
+        {
+            'version': '1',
+            'date': '15 March 2026',
+            'title': 'The First Letter',
+            'greeting': 'Hii my cutiepie Qaisara~',
+            'message': "Since you are one of the most loyal Avicenna members, I have given you a special version of this app. For you only, it's Avicenna with love.",
+            'features': [
+                'UNOBSTRUCTED use of the AI feature',
+                'Your very own pink theme',
+                'This love letter system, just for you',
+            ],
+            'closing': "Remember to not overuse it okay sayang~",
+            'sign_off': 'Love you',
+        },
+    ]
+
+
+def _get_changelog():
+    """Return the app changelog entries."""
+    return [
+        {
+            'version': '2.2.0',
+            'date': '2026-03-22',
+            'title': 'Routine Streaks & Animations',
+            'changes': [
+                'Per-routine streak counter with fire badge — tracks consecutive days',
+                'Circular progress ring replaces progress pill on dashboard',
+                'Smooth check animations with satisfying bounce effects',
+                'Streaks are smart — skips non-scheduled days without breaking',
+            ],
+        },
+        {
+            'version': '2.1.0',
+            'date': '2026-03-22',
+            'title': 'Settings & Dashboard Revamp',
+            'changes': [
+                'New settings page with profile avatar and username editing',
+                'Routine tracker moved to dashboard as a compact card',
+                'Simplified navbar — Guide, Changelog, and Logout consolidated into Settings',
+                'Redesigned changelog with collapsible previous updates',
+                'Charts now show all entries instead of last 30 days',
+            ],
+        },
+        {
+            'version': '2.0.0',
+            'date': '2026-03-21',
+            'title': 'Routine Tracker & Gamification',
+            'changes': [
+                'New routine tracker with daily/weekly/monthly scheduling',
+                'Pre-built presets: Solat (5 daily prayers), Exercise, Shower, and more',
+                'Completion tracking with confetti celebrations',
+                'Confetti celebration on routine completion',
+            ],
+        },
+        {
+            'version': '1.3.0',
+            'date': '2026-03-15',
+            'title': 'Special User Features',
+            'changes': [
+                'Unlimited AI access for special users',
+                'Personalized pink theme',
+                'Custom rate limits',
+            ],
+        },
+        {
+            'version': '1.2.0',
+            'date': '2026-03-01',
+            'title': 'Calorie Tracking',
+            'changes': [
+                'Calorie setup wizard with BMR/TDEE calculation',
+                'Daily calorie goal tracking on dashboard',
+                'Calorie settings modal for quick updates',
+            ],
+        },
+        {
+            'version': '1.1.0',
+            'date': '2026-02-15',
+            'title': 'AI Food Logging',
+            'changes': [
+                'AI-powered food logging with text and image input',
+                'GPT-4o integration for food recognition',
+                'Usage rate limiting and quota tracking',
+                'Personalized coach feedback',
+            ],
+        },
+        {
+            'version': '1.0.0',
+            'date': '2026-01-01',
+            'title': 'Initial Release',
+            'changes': [
+                'Dietary entry tracking',
+                'Exercise logging',
+                'Weight tracking with trend charts',
+                'Dashboard with heatmap and charts',
+                'Couples mode for partner viewing',
+                'JSON data import',
+            ],
+        },
+    ]
+
+
+@login_required
+def update_log(request):
+    """Render the changelog / update log page."""
+    return render(request, 'tracker/update_log.html', {'changelog': _get_changelog()})
+
+
+@login_required
+def settings_page(request):
+    """Settings page combining Guide, Changelog, and Account actions."""
+    context = {
+        'changelog': _get_changelog(),
+        'love_letters': _get_love_letters(),
+    }
+    return render(request, 'tracker/settings.html', context)
+
+
+@login_required
+@require_POST
+def update_username(request):
+    """Update the logged-in user's username."""
+    from django.contrib.auth.models import User
+    new_username = request.POST.get('username', '').strip()
+    if not new_username:
+        return redirect('tracker:settings')
+    if User.objects.filter(username=new_username).exclude(pk=request.user.pk).exists():
+        return redirect('tracker:settings')
+    request.user.username = new_username
+    request.user.save()
+    return redirect('tracker:settings')

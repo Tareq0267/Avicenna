@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="whats-new-card">
+  <div class="whats-new-header">What's New</div>
+
+  {% for entry in changelog %}
+    {% if forloop.first %}
+    <div class="whats-new-entry">
+      <div class="whats-new-meta">
+        <span class="whats-new-badge-latest">Latest</span>
+        <span class="whats-new-version">v{{ entry.version }}</span>
+        <span class="whats-new-date">{{ entry.date }}</span>
+      </div>
+      <h5 class="whats-new-title">{{ entry.title }}</h5>
+      <ul class="whats-new-list">
+        {% for change in entry.changes %}
+        <li><i class="bi bi-check-circle-fill"></i><span>{{ change }}</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  {% endfor %}
+
+  {% if changelog|length > 1 %}
+  <div class="whats-new-toggle-wrap">
+    <a href="#" class="whats-new-toggle" id="showOlderUpdates" onclick="toggleOlderUpdates(event)">
+      View {{ changelog|length|add:"-1" }} previous update{{ changelog|length|add:"-1"|pluralize }} <i class="bi bi-chevron-right"></i>
+    </a>
+  </div>
+
+  <div class="whats-new-older" id="olderUpdates" style="display: none;">
+    {% for entry in changelog %}
+      {% if not forloop.first %}
+      <div class="whats-new-entry">
+        <div class="whats-new-meta">
+          <span class="whats-new-version">v{{ entry.version }}</span>
+          <span class="whats-new-date">{{ entry.date }}</span>
+        </div>
+        <h5 class="whats-new-title">{{ entry.title }}</h5>
+        <ul class="whats-new-list">
+          {% for change in entry.changes %}
+          <li><i class="bi bi-check-circle-fill"></i><span>{{ change }}</span></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<style>
+.whats-new-card {
+  background: #fff;
+  border-radius: 1.25rem;
+  box-shadow: 0 2px 16px rgba(99, 102, 241, 0.08);
+  padding: 1.75rem 2rem;
+  max-width: 600px;
+}
+.whats-new-header {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #9ca3af;
+  margin-bottom: 1.25rem;
+}
+.whats-new-entry {
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+.whats-new-entry:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.whats-new-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+  flex-wrap: wrap;
+}
+.whats-new-badge-latest {
+  background: #6366f1;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.2rem 0.65rem;
+  border-radius: 1rem;
+}
+.whats-new-version {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+}
+.whats-new-date {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin-left: auto;
+}
+.whats-new-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+}
+.whats-new-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.whats-new-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.35rem 0;
+  font-size: 0.9rem;
+  color: #374151;
+  line-height: 1.5;
+}
+.whats-new-list li i {
+  color: #6366f1;
+  font-size: 0.85rem;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+.whats-new-toggle-wrap {
+  text-align: center;
+  padding-top: 0.25rem;
+}
+.whats-new-toggle {
+  color: #6366f1;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.whats-new-toggle:hover { color: #4f46e5; }
+.whats-new-toggle i { font-size: 0.75rem; transition: transform 0.3s; }
+.whats-new-toggle.expanded i { transform: rotate(90deg); }
+.whats-new-older {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #f3f4f6;
+}
+</style>
+
+<script>
+function toggleOlderUpdates(e) {
+  e.preventDefault();
+  const older = document.getElementById('olderUpdates');
+  const toggle = document.getElementById('showOlderUpdates');
+  const isHidden = older.style.display === 'none';
+  older.style.display = isHidden ? 'block' : 'none';
+  toggle.classList.toggle('expanded', isHidden);
+  const count = toggle.textContent.match(/\d+/)?.[0] || '';
+  if (isHidden) {
+    toggle.innerHTML = 'Hide previous updates <i class="bi bi-chevron-right"></i>';
+  } else {
+    toggle.innerHTML = 'View ' + count + ' previous update' + (count > 1 ? 's' : '') + ' <i class="bi bi-chevron-right"></i>';
+  }
+}
+</script>
+{% endblock %}
