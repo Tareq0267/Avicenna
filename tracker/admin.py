@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth import get_user_model
 from django.utils.html import format_html
-from .models import DietaryEntry, ExerciseEntry, WeightEntry, UserProfile, AIUsage, Routine, CompletionRecord, UserPoints
+from .models import DietaryEntry, ExerciseEntry, WeightEntry, UserProfile, AIUsage, Routine, CompletionRecord
 
 User = get_user_model()
 
@@ -89,19 +89,15 @@ class AIUsageAdmin(admin.ModelAdmin):
 
 @admin.register(Routine)
 class RoutineAdmin(admin.ModelAdmin):
-    list_display = ('user', 'name', 'schedule_type', 'points_value', 'is_active', 'created_at')
+    list_display = ('user', 'name', 'schedule_type', 'is_active', 'created_at')
     list_filter = ('schedule_type', 'is_active', 'user')
     search_fields = ('name', 'description')
 
 
 @admin.register(CompletionRecord)
 class CompletionRecordAdmin(admin.ModelAdmin):
-    list_display = ('user', 'routine', 'date', 'points_earned', 'completed_at')
+    list_display = ('user', 'routine', 'date', 'completed_at')
     list_filter = ('date', 'user')
     date_hierarchy = 'date'
 
 
-@admin.register(UserPoints)
-class UserPointsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'total_points', 'current_streak', 'longest_streak', 'last_completion_date')
-    search_fields = ('user__username',)

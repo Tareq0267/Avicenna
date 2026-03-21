@@ -11,51 +11,6 @@
   </button>
 </div>
 
-<!-- Stat Cards Row -->
-<div class="row g-3 mb-4">
-  <div class="col-4">
-    <div class="stat-card">
-      <div class="stat-icon" style="background: linear-gradient(135deg, #6366f1, #818cf8);">
-        <i class="bi bi-star-fill"></i>
-      </div>
-      <div class="stat-info">
-        <span class="stat-label">Total Points</span>
-        <span class="stat-value" id="totalPoints">{{ user_points.total_points }}</span>
-      </div>
-    </div>
-  </div>
-  <div class="col-4">
-    <div class="stat-card">
-      <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">
-        <i class="bi bi-fire"></i>
-      </div>
-      <div class="stat-info">
-        <span class="stat-label">Current Streak</span>
-        <span class="stat-value" id="currentStreak">{{ user_points.current_streak }} <small>days</small></span>
-      </div>
-    </div>
-  </div>
-  <div class="col-4">
-    <div class="stat-card">
-      <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #34d399);">
-        <i class="bi bi-trophy-fill"></i>
-      </div>
-      <div class="stat-info">
-        <span class="stat-label">Best Streak</span>
-        <span class="stat-value">{{ user_points.longest_streak }} <small>days</small></span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Streak Milestone Badge -->
-{% if streak_milestone %}
-<div class="alert py-2 px-3 mb-3 d-flex align-items-center gap-2" style="background: {{ streak_milestone.color }}15; border: 1px solid {{ streak_milestone.color }}40; border-radius: 0.75rem;">
-  <i class="bi {{ streak_milestone.icon }}" style="color: {{ streak_milestone.color }}; font-size: 1.25rem;"></i>
-  <span style="color: {{ streak_milestone.color }}; font-weight: 600;">{{ streak_milestone.label }}</span>
-</div>
-{% endif %}
-
 <!-- Today's Progress Bar -->
 <div class="chart-card mb-4">
   <div class="d-flex justify-content-between align-items-center mb-2">
@@ -130,16 +85,13 @@
         {% endif %}
       </div>
       <!-- Points Badge -->
-      <span class="badge rounded-pill" style="background: {{ item.routine.color }}20; color: {{ item.routine.color }};">
-        +{{ item.routine.points_value }}
-      </span>
       <!-- Actions Dropdown -->
       <div class="dropdown">
         <button class="btn btn-sm btn-light" data-bs-toggle="dropdown" aria-expanded="false">
           <i class="bi bi-three-dots-vertical"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
-          <li><a class="dropdown-item" href="#" onclick="openEditModal({{ item.routine.id }}, '{{ item.routine.name|escapejs }}', '{{ item.routine.description|escapejs }}', '{{ item.routine.schedule_type }}', {{ item.routine.points_value }}, '{{ item.routine.icon }}', '{{ item.routine.color }}', '{{ item.routine.schedule_config|escapejs }}'); return false;">
+          <li><a class="dropdown-item" href="#" onclick="openEditModal({{ item.routine.id }}, '{{ item.routine.name|escapejs }}', '{{ item.routine.description|escapejs }}', '{{ item.routine.schedule_type }}', '{{ item.routine.icon }}', '{{ item.routine.color }}', '{{ item.routine.schedule_config|escapejs }}'); return false;">
             <i class="bi bi-pencil me-2"></i>Edit
           </a></li>
           <li><a class="dropdown-item text-danger" href="#" onclick="deleteRoutine({{ item.routine.id }}); return false;">
@@ -204,7 +156,6 @@
         <tr>
           <th>Routine</th>
           <th>Schedule</th>
-          <th>Points</th>
         </tr>
       </thead>
       <tbody>
@@ -215,7 +166,6 @@
             {{ routine.name }}
           </td>
           <td class="text-muted small">{{ routine.get_schedule_type_display }}</td>
-          <td><span class="badge rounded-pill" style="background: {{ routine.color }}20; color: {{ routine.color }};">+{{ routine.points_value }}</span></td>
         </tr>
         {% endfor %}
       </tbody>
@@ -273,10 +223,6 @@
           <input type="time" class="form-control" id="routineTime">
         </div>
         <div class="row g-3">
-          <div class="col-6">
-            <label class="form-label">Points</label>
-            <input type="number" class="form-control" id="routinePoints" value="10" min="1" max="100">
-          </div>
           <div class="col-6">
             <label class="form-label">Color</label>
             <input type="color" class="form-control form-control-color w-100" id="routineColor" value="#6366f1">
@@ -351,15 +297,9 @@
           <label class="form-label">Time (optional)</label>
           <input type="time" class="form-control" id="editRoutineTime">
         </div>
-        <div class="row g-3">
-          <div class="col-6">
-            <label class="form-label">Points</label>
-            <input type="number" class="form-control" id="editRoutinePoints" min="1" max="100">
-          </div>
-          <div class="col-6">
-            <label class="form-label">Color</label>
-            <input type="color" class="form-control form-control-color w-100" id="editRoutineColor">
-          </div>
+        <div class="mb-3">
+          <label class="form-label">Color</label>
+          <input type="color" class="form-control form-control-color" id="editRoutineColor">
         </div>
         <div id="editRoutineResult" class="alert d-none mt-3"></div>
       </div>
@@ -405,8 +345,6 @@ function toggleRoutine(routineId) {
         }
 
         // Update stats
-        document.getElementById('totalPoints').textContent = data.total_points;
-        document.getElementById('currentStreak').innerHTML = data.current_streak + ' <small>days</small>';
         document.getElementById('progressText').textContent = data.done_today + '/' + data.total_today;
         const pct = data.total_today > 0 ? Math.round(data.done_today / data.total_today * 100) : 0;
         document.getElementById('progressBar').style.width = pct + '%';
@@ -487,7 +425,6 @@ function saveRoutine() {
     formData.append('description', document.getElementById('routineDesc').value.trim());
     formData.append('schedule_type', document.getElementById('routineSchedule').value);
     formData.append('time', document.getElementById('routineTime').value);
-    formData.append('points_value', document.getElementById('routinePoints').value);
     formData.append('color', document.getElementById('routineColor').value);
 
     const selectedIcon = document.querySelector('input[name="icon"]:checked');
@@ -552,12 +489,11 @@ function addPresetGroup(group) {
 }
 
 // ===== Edit Routine =====
-function openEditModal(id, name, desc, scheduleType, points, icon, color, configJson) {
+function openEditModal(id, name, desc, scheduleType, icon, color, configJson) {
     document.getElementById('editRoutineId').value = id;
     document.getElementById('editRoutineName').value = name;
     document.getElementById('editRoutineDesc').value = desc;
     document.getElementById('editRoutineSchedule').value = scheduleType;
-    document.getElementById('editRoutinePoints').value = points;
     document.getElementById('editRoutineColor').value = color;
 
     let config = {};
@@ -589,7 +525,6 @@ function saveEditRoutine() {
     formData.append('description', document.getElementById('editRoutineDesc').value.trim());
     formData.append('schedule_type', document.getElementById('editRoutineSchedule').value);
     formData.append('time', document.getElementById('editRoutineTime').value);
-    formData.append('points_value', document.getElementById('editRoutinePoints').value);
     formData.append('color', document.getElementById('editRoutineColor').value);
 
     document.querySelectorAll('input[name="edit_days"]:checked').forEach(cb => {

@@ -65,7 +65,7 @@ from django.db.models import Sum, Count, Max
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
-from .models import DietaryEntry, ExerciseEntry, WeightEntry, UserProfile, Routine, CompletionRecord, UserPoints
+from .models import DietaryEntry, ExerciseEntry, WeightEntry, UserProfile, Routine, CompletionRecord
 
 from django.utils import timezone
 from datetime import timedelta, datetime
@@ -107,8 +107,11 @@ def dashboard(request, view_partner=False):
     latest_exercise = ExerciseEntry.objects.filter(user=target_user).aggregate(m=Max('date'))['m']
     latest_weight = WeightEntry.objects.filter(user=target_user).aggregate(m=Max('date'))['m']
 
-    earliest_dates = [d for d in [earliest_dietary, earliest_exercise, earliest_weight] if d]
-    latest_dates = [d for d in [latest_dietary, latest_exercise, latest_weight, today] if d]
+    earliest_routine = CompletionRecord.objects.filter(user=target_user).aggregate(m=Min('date'))['m']
+    latest_routine = CompletionRecord.objects.filter(user=target_user).aggregate(m=Max('date'))['m']
+
+    earliest_dates = [d for d in [earliest_dietary, earliest_exercise, earliest_weight, earliest_routine] if d]
+    latest_dates = [d for d in [latest_dietary, latest_exercise, latest_weight, latest_routine, today] if d]
 
     if earliest_dates:
         chart_start = min(earliest_dates)
@@ -168,6 +171,9 @@ def dashboard(request, view_partner=False):
     # count weight entries
     for r in WeightEntry.objects.filter(user=target_user, date__gte=heatmap_start, date__lte=heatmap_end).values('date').annotate(c=Count('id')):
         activity_counts[str(r['date'])] += r['c']
+    # count routine completions
+    for r in CompletionRecord.objects.filter(user=target_user, date__gte=heatmap_start, date__lte=heatmap_end).values('date').annotate(c=Count('id')):
+        activity_counts[str(r['date'])] += r['c']
     # Build list [[date, count], ...]
     heatmap_data = [[d, c] for d, c in activity_counts.items()]
 
@@ -181,31 +187,31 @@ def dashboard(request, view_partner=False):
     except (AttributeError, UserProfile.DoesNotExist):
         calorie_profile_complete = False
 
-    # Routine data for dashboard card
+    # Routine data for dashboard card (show for both own and partner views)
     routine_checklist = []
     routine_total = 0
     routine_done = 0
     routine_icon_choices = []
     routine_preset_groups = {}
     routine_existing_presets = set()
+    all_routines = Routine.objects.filter(user=target_user, is_active=True)
+    todays_routines = [r for r in all_routines if r.is_scheduled_for(today)]
+    def _sort_key(r):
+        t = r.get_scheduled_time()
+        return (t if t else '99:99', r.order)
+    todays_routines.sort(key=_sort_key)
+    completed_ids = set(
+        CompletionRecord.objects.filter(user=target_user, date=today)
+        .values_list('routine_id', flat=True)
+    )
+    for routine in todays_routines:
+        routine_checklist.append({
+            'routine': routine,
+            'completed': routine.id in completed_ids,
+        })
+    routine_total = len(todays_routines)
+    routine_done = len([c for c in routine_checklist if c['completed']])
     if not viewing_partner:
-        all_routines = Routine.objects.filter(user=request.user, is_active=True)
-        todays_routines = [r for r in all_routines if r.is_scheduled_for(today)]
-        def _sort_key(r):
-            t = r.get_scheduled_time()
-            return (t if t else '99:99', r.order)
-        todays_routines.sort(key=_sort_key)
-        completed_ids = set(
-            CompletionRecord.objects.filter(user=request.user, date=today)
-            .values_list('routine_id', flat=True)
-        )
-        for routine in todays_routines:
-            routine_checklist.append({
-                'routine': routine,
-                'completed': routine.id in completed_ids,
-            })
-        routine_total = len(todays_routines)
-        routine_done = len([c for c in routine_checklist if c['completed']])
         routine_icon_choices = [
             'bi-check-circle', 'bi-star', 'bi-heart', 'bi-lightning-charge',
             'bi-book', 'bi-moon-stars', 'bi-sun', 'bi-droplet', 'bi-cup-straw',
@@ -437,15 +443,27 @@ def daily_recap(request, date_str, user_id=None):
             'weight_kg', 'notes'
         ))
         
+        # Get routine completions for this date
+        routine_completions = list(
+            CompletionRecord.objects.filter(user=target_user, date=entry_date)
+            .select_related('routine')
+            .order_by('completed_at')
+        )
+        routines = [{
+            'name': rc.routine.name,
+            'icon': rc.routine.icon,
+            'color': rc.routine.color,
+        } for rc in routine_completions]
+
         # Calculate totals
         total_calories_in = sum(d['calories'] or 0 for d in dietary)
         total_calories_burned = sum(e['calories_burned'] or 0 for e in exercise)
         total_exercise_min = sum(e['duration_minutes'] or 0 for e in exercise)
-        
+
         # Convert Decimal to float for JSON serialization
         for w in weight:
             w['weight_kg'] = float(w['weight_kg'])
-        
+
         # Collect all unique non-empty remarks from dietary and exercise entries
         all_remarks = []
         seen_remarks = set()
@@ -470,12 +488,14 @@ def daily_recap(request, date_str, user_id=None):
             'dietary': dietary,
             'exercise': exercise,
             'weight': weight,
+            'routines': routines,
             'all_remarks': all_remarks,
             'summary': {
                 'total_calories_in': total_calories_in,
                 'total_calories_burned': total_calories_burned,
                 'total_exercise_min': total_exercise_min,
-                'net_calories': total_calories_in - total_calories_burned
+                'net_calories': total_calories_in - total_calories_burned,
+                'routines_completed': len(routines),
             }
         })
     except Exception as e:
@@ -531,6 +551,27 @@ def ai_parse_food(request):
                 'calories_today': calorie_status['calories_consumed'],
                 'calories_remaining': calorie_status['calories_remaining']
             }
+
+        # Add routine context for coach feedback
+        today = timezone.now().date()
+        all_routines = Routine.objects.filter(user=request.user, is_active=True)
+        todays_routines = [r for r in all_routines if r.is_scheduled_for(today)]
+        completed_ids = set(
+            CompletionRecord.objects.filter(user=request.user, date=today)
+            .values_list('routine_id', flat=True)
+        )
+        if todays_routines:
+            routine_context = {
+                'total': len(todays_routines),
+                'completed': len([r for r in todays_routines if r.id in completed_ids]),
+                'items': [
+                    {'name': r.name, 'done': r.id in completed_ids}
+                    for r in todays_routines
+                ]
+            }
+            if user_context is None:
+                user_context = {}
+            user_context['routines'] = routine_context
 
         service = AIFoodLogService(user_context=user_context)
 
@@ -887,9 +928,6 @@ def routine_tracker(request):
     total_today = len(todays_routines)
     done_today = len([c for c in checklist if c['completed']])
 
-    # Gamification stats
-    user_points, _ = UserPoints.objects.get_or_create(user=user)
-
     # 7-day history
     week_history = []
     for i in range(6, -1, -1):
@@ -914,13 +952,6 @@ def routine_tracker(request):
         .values_list('preset_key', flat=True)
     )
 
-    # Streak milestone
-    streak_milestone = None
-    if user_points.current_streak >= 30:
-        streak_milestone = {'icon': 'bi-trophy-fill', 'label': '30+ Day Streak!', 'color': '#f59e0b'}
-    elif user_points.current_streak >= 7:
-        streak_milestone = {'icon': 'bi-star-fill', 'label': '7+ Day Streak!', 'color': '#6366f1'}
-
     icon_choices = [
         'bi-check-circle', 'bi-star', 'bi-heart', 'bi-lightning-charge',
         'bi-book', 'bi-moon-stars', 'bi-sun', 'bi-droplet', 'bi-cup-straw',
@@ -934,11 +965,9 @@ def routine_tracker(request):
         'total_today': total_today,
         'done_today': done_today,
         'progress_percent': round(done_today / total_today * 100) if total_today > 0 else 0,
-        'user_points': user_points,
         'week_history': week_history,
         'preset_groups': preset_groups,
         'existing_preset_keys': existing_preset_keys,
-        'streak_milestone': streak_milestone,
         'all_routines': all_routines,
         'icon_choices': icon_choices,
     }
@@ -955,12 +984,10 @@ def toggle_completion(request, routine_id):
         return JsonResponse({'success': False, 'error': 'Routine not found'}, status=404)
 
     today = timezone.now().date()
-    user_points, _ = UserPoints.objects.get_or_create(user=request.user)
 
     try:
         # Already completed - undo it
         record = CompletionRecord.objects.get(routine=routine, date=today)
-        user_points.record_undo(record.points_earned, today)
         record.delete()
         completed = False
     except CompletionRecord.DoesNotExist:
@@ -969,9 +996,7 @@ def toggle_completion(request, routine_id):
             routine=routine,
             user=request.user,
             date=today,
-            points_earned=routine.points_value,
         )
-        user_points.record_completion(routine.points_value, today)
         completed = True
 
     # Check if all routines are done for confetti burst
@@ -983,9 +1008,6 @@ def toggle_completion(request, routine_id):
     return JsonResponse({
         'success': True,
         'completed': completed,
-        'total_points': user_points.total_points,
-        'current_streak': user_points.current_streak,
-        'longest_streak': user_points.longest_streak,
         'trigger_confetti': completed,
         'all_done': all_done,
         'done_today': completed_count,
@@ -1021,7 +1043,6 @@ def add_routine(request):
         description=request.POST.get('description', '').strip(),
         schedule_type=schedule_type,
         schedule_config=schedule_config,
-        points_value=int(request.POST.get('points_value', 10)),
         icon=request.POST.get('icon', 'bi-check-circle'),
         color=request.POST.get('color', '#6366f1'),
     )
@@ -1049,7 +1070,6 @@ def edit_routine(request, routine_id):
     routine.name = name
     routine.description = request.POST.get('description', '').strip()
     routine.schedule_type = request.POST.get('schedule_type', routine.schedule_type)
-    routine.points_value = int(request.POST.get('points_value', routine.points_value))
     routine.icon = request.POST.get('icon', routine.icon)
     routine.color = request.POST.get('color', routine.color)
 
@@ -1147,7 +1167,7 @@ def _get_changelog():
             'changes': [
                 'New routine tracker with daily/weekly/monthly scheduling',
                 'Pre-built presets: Solat (5 daily prayers), Exercise, Shower, and more',
-                'Points system with streak tracking',
+                'Completion tracking with confetti celebrations',
                 'Confetti celebration on routine completion',
             ],
         },

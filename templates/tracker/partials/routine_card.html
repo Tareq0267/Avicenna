@@ -3,12 +3,14 @@
 
 <div class="routine-card-wrap mb-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h6 class="mb-0 fw-bold">Daily Routine</h6>
+    <h6 class="mb-0 fw-bold">{% if viewing_partner %}{{ partner_name }}'s Routine{% else %}Daily Routine{% endif %}</h6>
     <div class="d-flex gap-2 align-items-center">
       <span class="routine-progress-pill">{{ routine_done }}/{{ routine_total }}</span>
+      {% if not viewing_partner %}
       <button class="btn btn-sm p-0 routine-add-btn" data-bs-toggle="modal" data-bs-target="#addRoutineModal" title="Add routine">
         <i class="bi bi-plus-circle-fill"></i>
       </button>
+      {% endif %}
     </div>
   </div>
 
@@ -17,8 +19,8 @@
     <div class="routine-row {% if item.completed %}completed{% endif %}"
          id="routine-{{ item.routine.id }}" data-routine-id="{{ item.routine.id }}">
       <div class="routine-row-check {% if item.completed %}checked{% endif %}"
-           onclick="toggleRoutine({{ item.routine.id }})"
-           style="--rc: {{ item.routine.color }};">
+           {% if not viewing_partner %}onclick="toggleRoutine({{ item.routine.id }})"{% endif %}
+           style="--rc: {{ item.routine.color }};{% if viewing_partner %} cursor: default;{% endif %}">
         {% if item.completed %}
         <i class="bi bi-check-circle-fill"></i>
         {% else %}
@@ -44,13 +46,16 @@
   {% else %}
     <div class="text-center py-3">
       <p class="text-muted mb-2 small">No routines yet</p>
+      {% if not viewing_partner %}
       <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#routinePresetsModal">
         <i class="bi bi-lightning-charge me-1"></i>Add Presets
       </button>
+      {% endif %}
     </div>
   {% endif %}
 </div>
 
+{% if not viewing_partner %}
 <!-- Add Routine Modal -->
 <div class="modal fade" id="addRoutineModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
@@ -297,3 +302,4 @@ function addPresetGroup(group) {
     }).then(r => r.json()).then(data => { if (data.success) location.reload(); });
 }
 </script>
+{% endif %}

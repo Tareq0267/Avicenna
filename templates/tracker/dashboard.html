@@ -408,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <!-- Daily Routine Card -->
-{% if not viewing_partner %}
+{% if routine_checklist or not viewing_partner %}
 {% include "tracker/partials/routine_card.html" %}
 {% endif %}
 
@@ -601,6 +601,12 @@ document.addEventListener('DOMContentLoaded', function() {
           <div id="recapWeightSection">
             <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-speedometer2 me-2"></i>Weight</h6>
             <div id="recapWeightList"></div>
+          </div>
+
+          <!-- Routines Section -->
+          <div id="recapRoutineSection" class="d-none mb-4">
+            <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-check2-circle me-2"></i>Routines</h6>
+            <div id="recapRoutineList"></div>
           </div>
 
           <!-- Coach Feedback / Remarks Section -->
@@ -1265,7 +1271,7 @@ document.addEventListener('DOMContentLoaded', function() {
           return;
         }
         
-        const hasData = data.dietary.length > 0 || data.exercise.length > 0 || data.weight.length > 0;
+        const hasData = data.dietary.length > 0 || data.exercise.length > 0 || data.weight.length > 0 || (data.routines && data.routines.length > 0);
         
         if (!hasData) {
           recapEmpty.classList.remove('d-none');
@@ -1355,6 +1361,22 @@ document.addEventListener('DOMContentLoaded', function() {
           remarksContent.classList.add('d-none');
           remarksEmpty.classList.remove('d-none');
         }
+
+        // Populate routines
+        const routineSection = document.getElementById('recapRoutineSection');
+        const routineList = document.getElementById('recapRoutineList');
+        if (data.routines && data.routines.length > 0) {
+          routineSection.classList.remove('d-none');
+          routineList.innerHTML = data.routines.map(item => `
+            <div class="d-flex align-items-center mb-2 p-2 bg-light rounded">
+              <span class="me-2" style="color: ${item.color};"><i class="bi ${item.icon}"></i></span>
+              <span class="fw-medium">${item.name}</span>
+            </div>
+          `).join('');
+        } else {
+          routineSection.classList.add('d-none');
+        }
+
         recapContent.classList.remove('d-none');
       })
       .catch(err => {

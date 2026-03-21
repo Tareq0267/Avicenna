@@ -6,7 +6,7 @@ ROUTINE_PRESETS = {
         'description': 'Fajr prayer',
         'schedule_type': 'daily',
         'schedule_config': {'time': '05:30'},
-        'points_value': 15,
+
         'icon': 'bi-moon-stars',
         'color': '#6366f1',
         'group': 'solat',
@@ -16,7 +16,7 @@ ROUTINE_PRESETS = {
         'description': 'Dhuhr prayer',
         'schedule_type': 'daily',
         'schedule_config': {'time': '13:00'},
-        'points_value': 15,
+
         'icon': 'bi-sun',
         'color': '#f59e0b',
         'group': 'solat',
@@ -26,7 +26,7 @@ ROUTINE_PRESETS = {
         'description': 'Asr prayer',
         'schedule_type': 'daily',
         'schedule_config': {'time': '16:30'},
-        'points_value': 15,
+
         'icon': 'bi-cloud-sun',
         'color': '#f97316',
         'group': 'solat',
@@ -36,7 +36,7 @@ ROUTINE_PRESETS = {
         'description': 'Maghrib prayer',
         'schedule_type': 'daily',
         'schedule_config': {'time': '19:15'},
-        'points_value': 15,
+
         'icon': 'bi-sunset',
         'color': '#ef4444',
         'group': 'solat',
@@ -46,7 +46,7 @@ ROUTINE_PRESETS = {
         'description': 'Isha prayer',
         'schedule_type': 'daily',
         'schedule_config': {'time': '20:30'},
-        'points_value': 15,
+
         'icon': 'bi-moon',
         'color': '#3b82f6',
         'group': 'solat',
@@ -56,7 +56,7 @@ ROUTINE_PRESETS = {
         'description': '30 min workout',
         'schedule_type': 'daily',
         'schedule_config': {'time': '07:00'},
-        'points_value': 20,
+
         'icon': 'bi-lightning-charge',
         'color': '#10b981',
         'group': 'health',
@@ -66,7 +66,7 @@ ROUTINE_PRESETS = {
         'description': 'Morning hygiene routine',
         'schedule_type': 'daily',
         'schedule_config': {'time': '06:30'},
-        'points_value': 5,
+
         'icon': 'bi-droplet',
         'color': '#06b6d4',
         'group': 'health',
@@ -76,7 +76,7 @@ ROUTINE_PRESETS = {
         'description': 'Stay hydrated throughout the day',
         'schedule_type': 'daily',
         'schedule_config': {},
-        'points_value': 10,
+
         'icon': 'bi-cup-straw',
         'color': '#0ea5e9',
         'group': 'health',
@@ -86,7 +86,7 @@ ROUTINE_PRESETS = {
         'description': 'Daily Quran reading',
         'schedule_type': 'daily',
         'schedule_config': {},
-        'points_value': 15,
+
         'icon': 'bi-book',
         'color': '#059669',
         'group': 'spiritual',
@@ -96,7 +96,7 @@ ROUTINE_PRESETS = {
         'description': 'Morning/night skincare',
         'schedule_type': 'daily',
         'schedule_config': {},
-        'points_value': 5,
+
         'icon': 'bi-stars',
         'color': '#ec4899',
         'group': 'health',
@@ -153,7 +153,6 @@ def add_preset_for_user(user, preset_key):
         schedule_type=preset['schedule_type'],
         schedule_config=preset['schedule_config'],
         preset_key=preset_key,
-        points_value=preset['points_value'],
         icon=preset['icon'],
         color=preset['color'],
     )
