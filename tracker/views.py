@@ -84,6 +84,36 @@ def get_partner(user):
         return None
 
 
+def _get_routine_streak(routine, user, today):
+    """Calculate consecutive days of completion for a routine, ending at today or yesterday."""
+    completion_dates = set(
+        CompletionRecord.objects.filter(routine=routine, user=user, date__lte=today)
+        .order_by('-date')
+        .values_list('date', flat=True)[:60]  # Look back max 60 days
+    )
+    if not completion_dates:
+        return 0
+
+    # Start from today — if not completed today, start from yesterday
+    check_date = today
+    if check_date not in completion_dates:
+        check_date = today - timedelta(days=1)
+        if check_date not in completion_dates:
+            return 0
+
+    streak = 0
+    while check_date in completion_dates:
+        # Only count days where the routine was scheduled
+        if routine.is_scheduled_for(check_date):
+            streak += 1
+        check_date -= timedelta(days=1)
+        # Skip days where routine wasn't scheduled (don't break streak)
+        while not routine.is_scheduled_for(check_date) and (today - check_date).days < 60:
+            check_date -= timedelta(days=1)
+
+    return streak
+
+
 @login_required
 @never_cache
 def dashboard(request, view_partner=False):
@@ -208,6 +238,7 @@ def dashboard(request, view_partner=False):
         routine_checklist.append({
             'routine': routine,
             'completed': routine.id in completed_ids,
+            'streak': _get_routine_streak(routine, target_user, today),
         })
     routine_total = len(todays_routines)
     routine_done = len([c for c in routine_checklist if c['completed']])
@@ -261,6 +292,7 @@ def dashboard(request, view_partner=False):
         'routine_checklist': routine_checklist,
         'routine_total': routine_total,
         'routine_done': routine_done,
+        'routine_ring_dash': round(routine_done / routine_total * 97.4, 1) if routine_total > 0 else 0,
         'routine_icon_choices': routine_icon_choices,
         'routine_preset_groups': routine_preset_groups,
         'routine_existing_presets': routine_existing_presets,
@@ -925,6 +957,7 @@ def routine_tracker(request):
         checklist.append({
             'routine': routine,
             'completed': routine.id in completed_ids,
+            'streak': _get_routine_streak(routine, user, today),
         })
 
     total_today = len(todays_routines)
@@ -1007,6 +1040,8 @@ def toggle_completion(request, routine_id):
     completed_count = CompletionRecord.objects.filter(user=request.user, date=today).count()
     all_done = completed_count >= len(todays_routines) and len(todays_routines) > 0
 
+    streak = _get_routine_streak(routine, request.user, today) if completed else 0
+
     return JsonResponse({
         'success': True,
         'completed': completed,
@@ -1014,6 +1049,7 @@ def toggle_completion(request, routine_id):
         'all_done': all_done,
         'done_today': completed_count,
         'total_today': len(todays_routines),
+        'streak': streak,
     })
 
 

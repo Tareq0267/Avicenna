@@ -74,8 +74,15 @@
       </div>
       <!-- Info -->
       <div class="flex-grow-1 min-width-0">
-        <div class="routine-name {% if item.completed %}text-decoration-line-through text-muted{% endif %}">
-          {{ item.routine.name }}
+        <div class="d-flex align-items-center gap-2">
+          <span class="routine-name {% if item.completed %}text-decoration-line-through text-muted{% endif %}">
+            {{ item.routine.name }}
+          </span>
+          {% if item.streak > 1 %}
+          <span class="routine-streak-badge" data-routine-streak="{{ item.routine.id }}">
+            <i class="bi bi-fire"></i>{{ item.streak }}
+          </span>
+          {% endif %}
         </div>
         {% if item.routine.description %}
         <div class="small text-muted">{{ item.routine.description }}</div>
@@ -357,11 +364,33 @@ function toggleRoutine(routineId) {
             icon.className = 'bi bi-check-circle-fill';
             el.classList.add('routine-completed');
             nameEl.classList.add('text-decoration-line-through', 'text-muted');
+            // Trigger check animation
+            el.classList.add('routine-check-pop');
+            setTimeout(() => el.classList.remove('routine-check-pop'), 400);
         } else {
             checkbox.classList.remove('checked');
             icon.className = 'bi bi-circle';
             el.classList.remove('routine-completed');
             nameEl.classList.remove('text-decoration-line-through', 'text-muted');
+        }
+
+        // Update streak badge
+        const streakEl = el.querySelector('[data-routine-streak]');
+        if (data.completed && data.streak > 1) {
+            if (streakEl) {
+                streakEl.innerHTML = '<i class="bi bi-fire"></i>' + data.streak;
+            } else {
+                const nameRow = el.querySelector('.d-flex.align-items-center.gap-2');
+                if (nameRow) {
+                    const badge = document.createElement('span');
+                    badge.className = 'routine-streak-badge';
+                    badge.dataset.routineStreak = routineId;
+                    badge.innerHTML = '<i class="bi bi-fire"></i>' + data.streak;
+                    nameRow.appendChild(badge);
+                }
+            }
+        } else if (streakEl) {
+            streakEl.remove();
         }
 
         // Update stats

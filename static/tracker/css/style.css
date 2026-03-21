@@ -428,6 +428,108 @@ body {
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--sw);
 }
 
+/* ===== Routine Progress Ring ===== */
+.routine-ring-wrap {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+.routine-ring {
+  width: 100%;
+  height: 100%;
+}
+.routine-ring-fill {
+  transition: stroke-dasharray 0.6s cubic-bezier(.4,0,.2,1);
+}
+.routine-ring-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* ===== Routine Streak Badge ===== */
+.routine-streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #f59e0b;
+  background: #fef3c7;
+  padding: 1px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+  animation: streakPop 0.3s ease-out;
+}
+.routine-streak-badge .bi-fire {
+  font-size: 0.7rem;
+}
+
+@keyframes streakPop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ===== Routine Check Animation ===== */
+.routine-check-pop {
+  animation: checkPop 0.4s ease-out;
+}
+
+@keyframes checkPop {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.04); }
+  60% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+/* Dashboard card: check icon animation */
+.routine-row-check {
+  transition: color 0.2s, transform 0.2s;
+}
+.routine-row-check.checked i {
+  animation: checkIconPop 0.35s cubic-bezier(.4,0,.2,1);
+}
+
+@keyframes checkIconPop {
+  0% { transform: scale(0.5); opacity: 0.5; }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Routine row completion slide */
+.routine-row {
+  transition: opacity 0.3s ease, transform 0.3s ease, background 0.2s;
+}
+.routine-row.completed {
+  opacity: 0.55;
+}
+
+/* Tracker page: checkbox icon animation */
+.routine-checkbox {
+  transition: color 0.2s, transform 0.25s cubic-bezier(.4,0,.2,1);
+}
+.routine-checkbox.checked i {
+  animation: checkIconPop 0.35s cubic-bezier(.4,0,.2,1);
+}
+
+/* Tracker page: item completion fade */
+.routine-item {
+  transition: background 0.15s, opacity 0.3s ease, transform 0.3s ease;
+}
+.routine-completed {
+  opacity: 0.7;
+}
+.routine-item.routine-check-pop {
+  animation: checkPop 0.4s ease-out;
+}
+
 /* ===== Changelog Styles ===== */
 
 .changelog-entry {

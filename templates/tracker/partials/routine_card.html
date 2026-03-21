@@ -5,7 +5,20 @@
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h6 class="mb-0 fw-bold">{% if viewing_partner %}{{ partner_name }}'s Routine{% else %}Daily Routine{% endif %}</h6>
     <div class="d-flex gap-2 align-items-center">
-      <span class="routine-progress-pill">{{ routine_done }}/{{ routine_total }}</span>
+      <!-- Circular Progress Ring -->
+      <div class="routine-ring-wrap" title="{{ routine_done }}/{{ routine_total }} completed">
+        <svg class="routine-ring" viewBox="0 0 36 36">
+          <circle class="routine-ring-bg" cx="18" cy="18" r="15.5" fill="none" stroke="#e5e7eb" stroke-width="3"/>
+          <circle class="routine-ring-fill" cx="18" cy="18" r="15.5" fill="none" stroke="url(#ringGrad)" stroke-width="3"
+                  stroke-dasharray="{{ routine_ring_dash }}, 97.4"
+                  stroke-linecap="round" transform="rotate(-90 18 18)"
+                  style="transition: stroke-dasharray 0.6s cubic-bezier(.4,0,.2,1);"/>
+          <defs><linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#34d399"/>
+          </linearGradient></defs>
+        </svg>
+        <span class="routine-ring-text">{{ routine_done }}/{{ routine_total }}</span>
+      </div>
       {% if not viewing_partner %}
       <button class="btn btn-sm p-0 routine-add-btn" data-bs-toggle="modal" data-bs-target="#addRoutineModal" title="Add routine">
         <i class="bi bi-plus-circle-fill"></i>
@@ -32,15 +45,17 @@
       </div>
       <div class="routine-row-info">
         <span class="routine-row-name {% if item.completed %}done{% endif %}">{{ item.routine.name }}</span>
-        {% if item.routine.get_scheduled_time %}
-        <span class="routine-row-sub">{{ item.routine.get_scheduled_time }}</span>
-        {% endif %}
+        <div class="d-flex align-items-center gap-2">
+          {% if item.routine.get_scheduled_time %}
+          <span class="routine-row-sub">{{ item.routine.get_scheduled_time }}</span>
+          {% endif %}
+          {% if item.streak > 1 %}
+          <span class="routine-streak-badge" data-routine-streak="{{ item.routine.id }}">
+            <i class="bi bi-fire"></i>{{ item.streak }}
+          </span>
+          {% endif %}
+        </div>
       </div>
-      {% if item.routine.get_scheduled_time %}
-      <div class="routine-row-time">
-        <i class="bi bi-clock"></i>
-      </div>
-      {% endif %}
     </div>
     {% endfor %}
   {% else %}
@@ -199,6 +214,9 @@ function toggleRoutine(routineId) {
             icon.className = 'bi bi-check-circle-fill';
             el.classList.add('completed');
             nameEl.classList.add('done');
+            // Trigger check animation
+            el.classList.add('routine-check-pop');
+            setTimeout(() => el.classList.remove('routine-check-pop'), 400);
         } else {
             checkEl.classList.remove('checked');
             icon.className = 'bi bi-circle';
@@ -206,9 +224,33 @@ function toggleRoutine(routineId) {
             nameEl.classList.remove('done');
         }
 
-        // Update progress pill
-        const pill = document.querySelector('.routine-progress-pill');
-        if (pill) pill.textContent = data.done_today + '/' + data.total_today;
+        // Update circular progress ring
+        const ringFill = document.querySelector('.routine-ring-fill');
+        const ringText = document.querySelector('.routine-ring-text');
+        if (ringFill && ringText) {
+            const pct = data.total_today > 0 ? data.done_today / data.total_today : 0;
+            ringFill.setAttribute('stroke-dasharray', (pct * 97.4).toFixed(1) + ', 97.4');
+            ringText.textContent = data.done_today + '/' + data.total_today;
+        }
+
+        // Update streak badge
+        const streakEl = el.querySelector('[data-routine-streak]');
+        if (data.completed && data.streak > 1) {
+            if (streakEl) {
+                streakEl.innerHTML = '<i class="bi bi-fire"></i>' + data.streak;
+            } else {
+                const infoDiv = el.querySelector('.routine-row-info .d-flex');
+                if (infoDiv) {
+                    const badge = document.createElement('span');
+                    badge.className = 'routine-streak-badge';
+                    badge.dataset.routineStreak = routineId;
+                    badge.innerHTML = '<i class="bi bi-fire"></i>' + data.streak;
+                    infoDiv.appendChild(badge);
+                }
+            }
+        } else if (streakEl) {
+            streakEl.remove();
+        }
 
         // Confetti
         if (data.trigger_confetti) {
