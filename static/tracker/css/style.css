@@ -409,6 +409,25 @@ body {
   border-color: var(--primary) !important;
 }
 
+/* Color Swatches */
+.color-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--sw);
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: all 0.15s;
+  display: inline-block;
+}
+.color-swatch:hover {
+  transform: scale(1.15);
+}
+.color-swatch.active {
+  border-color: #1f2937;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--sw);
+}
+
 /* ===== Changelog Styles ===== */
 
 .changelog-entry {

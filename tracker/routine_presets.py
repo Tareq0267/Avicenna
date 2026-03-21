@@ -8,7 +8,7 @@ ROUTINE_PRESETS = {
         'schedule_config': {'time': '05:30'},
 
         'icon': 'bi-moon-stars',
-        'color': '#6366f1',
+        'color': '#818cf8',
         'group': 'solat',
     },
     'solat_zohor': {
@@ -18,7 +18,7 @@ ROUTINE_PRESETS = {
         'schedule_config': {'time': '13:00'},
 
         'icon': 'bi-sun',
-        'color': '#f59e0b',
+        'color': '#facc15',
         'group': 'solat',
     },
     'solat_asar': {
@@ -28,7 +28,7 @@ ROUTINE_PRESETS = {
         'schedule_config': {'time': '16:30'},
 
         'icon': 'bi-cloud-sun',
-        'color': '#f97316',
+        'color': '#fb923c',
         'group': 'solat',
     },
     'solat_maghrib': {
@@ -38,7 +38,7 @@ ROUTINE_PRESETS = {
         'schedule_config': {'time': '19:15'},
 
         'icon': 'bi-sunset',
-        'color': '#ef4444',
+        'color': '#f87171',
         'group': 'solat',
     },
     'solat_isyak': {
@@ -48,7 +48,7 @@ ROUTINE_PRESETS = {
         'schedule_config': {'time': '20:30'},
 
         'icon': 'bi-moon',
-        'color': '#3b82f6',
+        'color': '#a78bfa',
         'group': 'solat',
     },
     'exercise_morning': {
@@ -58,7 +58,7 @@ ROUTINE_PRESETS = {
         'schedule_config': {'time': '07:00'},
 
         'icon': 'bi-lightning-charge',
-        'color': '#10b981',
+        'color': '#34d399',
         'group': 'health',
     },
     'shower_morning': {
@@ -68,7 +68,7 @@ ROUTINE_PRESETS = {
         'schedule_config': {'time': '06:30'},
 
         'icon': 'bi-droplet',
-        'color': '#06b6d4',
+        'color': '#38bdf8',
         'group': 'health',
     },
     'drink_water': {
@@ -78,7 +78,7 @@ ROUTINE_PRESETS = {
         'schedule_config': {},
 
         'icon': 'bi-cup-straw',
-        'color': '#0ea5e9',
+        'color': '#2dd4bf',
         'group': 'health',
     },
     'read_quran': {
@@ -88,7 +88,7 @@ ROUTINE_PRESETS = {
         'schedule_config': {},
 
         'icon': 'bi-book',
-        'color': '#059669',
+        'color': '#34d399',
         'group': 'spiritual',
     },
     'skincare': {
@@ -98,7 +98,7 @@ ROUTINE_PRESETS = {
         'schedule_config': {},
 
         'icon': 'bi-stars',
-        'color': '#ec4899',
+        'color': '#f472b6',
         'group': 'health',
     },
 }
@@ -108,17 +108,17 @@ PRESET_GROUPS = {
     'solat': {
         'name': 'Solat (5 Daily Prayers)',
         'icon': 'bi-moon-stars',
-        'color': '#6366f1',
+        'color': '#818cf8',
     },
     'health': {
         'name': 'Health & Hygiene',
         'icon': 'bi-heart-pulse',
-        'color': '#10b981',
+        'color': '#34d399',
     },
     'spiritual': {
         'name': 'Spiritual',
         'icon': 'bi-book',
-        'color': '#059669',
+        'color': '#34d399',
     },
 }
 

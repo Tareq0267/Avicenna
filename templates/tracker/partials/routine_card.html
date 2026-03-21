@@ -104,14 +104,23 @@
           <label class="form-label">Days of the month</label>
           <div class="d-flex flex-wrap gap-1" id="monthlyDates"></div>
         </div>
-        <div class="row g-3">
-          <div class="col-6">
-            <label class="form-label">Time (optional)</label>
-            <input type="time" class="form-control" id="routineTime">
-          </div>
-          <div class="col-6">
-            <label class="form-label">Color</label>
-            <input type="color" class="form-control form-control-color w-100" id="routineColor" value="#6366f1">
+        <div class="mb-3">
+          <label class="form-label">Time (optional)</label>
+          <input type="time" class="form-control" id="routineTime">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Color</label>
+          <div class="d-flex flex-wrap gap-2" id="colorPicker">
+            <label class="color-swatch active" style="--sw: #818cf8;"><input type="radio" class="d-none" name="color" value="#818cf8" checked></label>
+            <label class="color-swatch" style="--sw: #f472b6;"><input type="radio" class="d-none" name="color" value="#f472b6"></label>
+            <label class="color-swatch" style="--sw: #fb923c;"><input type="radio" class="d-none" name="color" value="#fb923c"></label>
+            <label class="color-swatch" style="--sw: #facc15;"><input type="radio" class="d-none" name="color" value="#facc15"></label>
+            <label class="color-swatch" style="--sw: #34d399;"><input type="radio" class="d-none" name="color" value="#34d399"></label>
+            <label class="color-swatch" style="--sw: #38bdf8;"><input type="radio" class="d-none" name="color" value="#38bdf8"></label>
+            <label class="color-swatch" style="--sw: #c084fc;"><input type="radio" class="d-none" name="color" value="#c084fc"></label>
+            <label class="color-swatch" style="--sw: #f87171;"><input type="radio" class="d-none" name="color" value="#f87171"></label>
+            <label class="color-swatch" style="--sw: #a78bfa;"><input type="radio" class="d-none" name="color" value="#a78bfa"></label>
+            <label class="color-swatch" style="--sw: #2dd4bf;"><input type="radio" class="d-none" name="color" value="#2dd4bf"></label>
           </div>
         </div>
         <div class="mt-3">
@@ -247,6 +256,12 @@ document.addEventListener('click', function(e) {
         iconBtn.classList.add('active');
         iconBtn.querySelector('input').checked = true;
     }
+    const colorSw = e.target.closest('.color-swatch');
+    if (colorSw) {
+        document.querySelectorAll('.color-swatch').forEach(b => b.classList.remove('active'));
+        colorSw.classList.add('active');
+        colorSw.querySelector('input').checked = true;
+    }
 });
 
 function saveRoutine() {
@@ -257,7 +272,8 @@ function saveRoutine() {
     formData.append('name', name);
     formData.append('schedule_type', document.getElementById('routineSchedule').value);
     formData.append('time', document.getElementById('routineTime').value);
-    formData.append('color', document.getElementById('routineColor').value);
+    const selectedColor = document.querySelector('input[name="color"]:checked');
+    formData.append('color', selectedColor ? selectedColor.value : '#818cf8');
 
     const selectedIcon = document.querySelector('input[name="icon"]:checked');
     formData.append('icon', selectedIcon ? selectedIcon.value : 'bi-check-circle');
