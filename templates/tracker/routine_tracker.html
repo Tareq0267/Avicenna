@@ -1,0 +1,633 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Canvas Confetti CDN -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0"><i class="bi bi-check2-square me-2"></i>Routine Tracker</h4>
+  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addRoutineModal">
+    <i class="bi bi-plus-lg me-1"></i>Add Routine
+  </button>
+</div>
+
+<!-- Stat Cards Row -->
+<div class="row g-3 mb-4">
+  <div class="col-4">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: linear-gradient(135deg, #6366f1, #818cf8);">
+        <i class="bi bi-star-fill"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Total Points</span>
+        <span class="stat-value" id="totalPoints">{{ user_points.total_points }}</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-4">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">
+        <i class="bi bi-fire"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Current Streak</span>
+        <span class="stat-value" id="currentStreak">{{ user_points.current_streak }} <small>days</small></span>
+      </div>
+    </div>
+  </div>
+  <div class="col-4">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #34d399);">
+        <i class="bi bi-trophy-fill"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Best Streak</span>
+        <span class="stat-value">{{ user_points.longest_streak }} <small>days</small></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Streak Milestone Badge -->
+{% if streak_milestone %}
+<div class="alert py-2 px-3 mb-3 d-flex align-items-center gap-2" style="background: {{ streak_milestone.color }}15; border: 1px solid {{ streak_milestone.color }}40; border-radius: 0.75rem;">
+  <i class="bi {{ streak_milestone.icon }}" style="color: {{ streak_milestone.color }}; font-size: 1.25rem;"></i>
+  <span style="color: {{ streak_milestone.color }}; font-weight: 600;">{{ streak_milestone.label }}</span>
+</div>
+{% endif %}
+
+<!-- Today's Progress Bar -->
+<div class="chart-card mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <span class="chart-title mb-0">Today's Progress</span>
+    <span class="fw-bold" id="progressText">{{ done_today }}/{{ total_today }}</span>
+  </div>
+  <div class="progress" style="height: 12px; border-radius: 6px;">
+    <div class="progress-bar" id="progressBar" role="progressbar"
+         style="width: {{ progress_percent }}%; background: linear-gradient(90deg, #6366f1, #818cf8);"
+         aria-valuenow="{{ progress_percent }}" aria-valuemin="0" aria-valuemax="100">
+    </div>
+  </div>
+  {% if progress_percent == 100 and total_today > 0 %}
+  <div class="text-center mt-2" id="allDoneBadge">
+    <span class="badge bg-success px-3 py-2"><i class="bi bi-check-circle-fill me-1"></i>All Done!</span>
+  </div>
+  {% else %}
+  <div class="text-center mt-2 d-none" id="allDoneBadge">
+    <span class="badge bg-success px-3 py-2"><i class="bi bi-check-circle-fill me-1"></i>All Done!</span>
+  </div>
+  {% endif %}
+</div>
+
+<!-- 7-Day History -->
+<div class="chart-card mb-4">
+  <div class="chart-title">This Week</div>
+  <div class="d-flex justify-content-between gap-1">
+    {% for day in week_history %}
+    <div class="text-center flex-fill">
+      <div class="small text-muted">{{ day.day_name }}</div>
+      <div class="mx-auto my-1 d-flex align-items-center justify-content-center rounded-circle {% if day.is_today %}border border-2 border-primary{% endif %}"
+           style="width: 36px; height: 36px;
+                  {% if day.total > 0 and day.completed == day.total %}background: #10b981; color: white;
+                  {% elif day.completed > 0 %}background: #6366f120; color: #6366f1;
+                  {% else %}background: #f3f4f6; color: #9ca3af;{% endif %}
+                  font-size: 0.8rem; font-weight: 600;">
+        {% if day.total > 0 %}{{ day.completed }}{% else %}-{% endif %}
+      </div>
+      <div class="small text-muted" style="font-size: 0.65rem;">{{ day.date|date:"d/m" }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Today's Routine Checklist -->
+<div class="chart-card mb-4">
+  <div class="chart-title">Today's Routines</div>
+  {% if checklist %}
+    {% for item in checklist %}
+    <div class="routine-item d-flex align-items-center gap-3 p-3 {% if not forloop.last %}border-bottom{% endif %} {% if item.completed %}routine-completed{% endif %}"
+         id="routine-{{ item.routine.id }}" data-routine-id="{{ item.routine.id }}">
+      <!-- Checkbox -->
+      <div class="routine-checkbox {% if item.completed %}checked{% endif %}"
+           onclick="toggleRoutine({{ item.routine.id }})"
+           style="--routine-color: {{ item.routine.color }};">
+        <i class="bi {% if item.completed %}bi-check-circle-fill{% else %}bi-circle{% endif %}"></i>
+      </div>
+      <!-- Icon -->
+      <div class="routine-icon" style="background: {{ item.routine.color }}20; color: {{ item.routine.color }};">
+        <i class="bi {{ item.routine.icon }}"></i>
+      </div>
+      <!-- Info -->
+      <div class="flex-grow-1 min-width-0">
+        <div class="routine-name {% if item.completed %}text-decoration-line-through text-muted{% endif %}">
+          {{ item.routine.name }}
+        </div>
+        {% if item.routine.description %}
+        <div class="small text-muted">{{ item.routine.description }}</div>
+        {% endif %}
+        {% if item.routine.get_scheduled_time %}
+        <div class="small text-muted"><i class="bi bi-clock me-1"></i>{{ item.routine.get_scheduled_time }}</div>
+        {% endif %}
+      </div>
+      <!-- Points Badge -->
+      <span class="badge rounded-pill" style="background: {{ item.routine.color }}20; color: {{ item.routine.color }};">
+        +{{ item.routine.points_value }}
+      </span>
+      <!-- Actions Dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-sm btn-light" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="bi bi-three-dots-vertical"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item" href="#" onclick="openEditModal({{ item.routine.id }}, '{{ item.routine.name|escapejs }}', '{{ item.routine.description|escapejs }}', '{{ item.routine.schedule_type }}', {{ item.routine.points_value }}, '{{ item.routine.icon }}', '{{ item.routine.color }}', '{{ item.routine.schedule_config|escapejs }}'); return false;">
+            <i class="bi bi-pencil me-2"></i>Edit
+          </a></li>
+          <li><a class="dropdown-item text-danger" href="#" onclick="deleteRoutine({{ item.routine.id }}); return false;">
+            <i class="bi bi-trash me-2"></i>Remove
+          </a></li>
+        </ul>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="text-center py-4 text-muted">
+      <i class="bi bi-inbox" style="font-size: 2rem; opacity: 0.4;"></i>
+      <p class="mt-2 mb-0">No routines scheduled for today.</p>
+      <p class="small">Add routines using presets below or create your own!</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Presets Section -->
+<div class="chart-card mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <span class="chart-title mb-0">Quick Add Presets</span>
+    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#presetsCollapse">
+      <i class="bi bi-chevron-down"></i>
+    </button>
+  </div>
+  <div class="collapse show" id="presetsCollapse">
+    {% for group_key, group in preset_groups.items %}
+    <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="fw-semibold small">
+          <i class="bi {{ group.meta.icon }} me-1" style="color: {{ group.meta.color }};"></i>
+          {{ group.meta.name }}
+        </span>
+        <button class="btn btn-sm btn-outline-primary" onclick="addPresetGroup('{{ group_key }}')">
+          Add All
+        </button>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        {% for preset in group.presets %}
+        <button class="btn btn-sm preset-btn {% if preset.key in existing_preset_keys %}disabled{% endif %}"
+                style="background: {{ preset.color }}15; color: {{ preset.color }}; border: 1px solid {{ preset.color }}40;"
+                onclick="addPreset('{{ preset.key }}')"
+                {% if preset.key in existing_preset_keys %}disabled{% endif %}>
+          <i class="bi {{ preset.icon }} me-1"></i>{{ preset.name }}
+          {% if preset.key in existing_preset_keys %}<i class="bi bi-check ms-1"></i>{% endif %}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- All Routines (including non-today) -->
+{% if all_routines.count > 0 %}
+<div class="chart-card mb-4">
+  <div class="chart-title">All My Routines</div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Routine</th>
+          <th>Schedule</th>
+          <th>Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for routine in all_routines %}
+        <tr>
+          <td>
+            <i class="bi {{ routine.icon }} me-1" style="color: {{ routine.color }};"></i>
+            {{ routine.name }}
+          </td>
+          <td class="text-muted small">{{ routine.get_schedule_type_display }}</td>
+          <td><span class="badge rounded-pill" style="background: {{ routine.color }}20; color: {{ routine.color }};">+{{ routine.points_value }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Add Routine Modal -->
+<div class="modal fade" id="addRoutineModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Add Custom Routine</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Name <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="routineName" placeholder="e.g. Morning jog" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <input type="text" class="form-control" id="routineDesc" placeholder="Optional details">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Schedule</label>
+          <select class="form-select" id="routineSchedule" onchange="toggleScheduleConfig()">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+        <!-- Weekly days picker -->
+        <div class="mb-3 d-none" id="weeklyConfig">
+          <label class="form-label">Days of the week</label>
+          <div class="d-flex flex-wrap gap-2">
+            <label class="btn btn-sm btn-outline-primary day-btn"><input type="checkbox" class="d-none" name="days" value="0"> Mon</label>
+            <label class="btn btn-sm btn-outline-primary day-btn"><input type="checkbox" class="d-none" name="days" value="1"> Tue</label>
+            <label class="btn btn-sm btn-outline-primary day-btn"><input type="checkbox" class="d-none" name="days" value="2"> Wed</label>
+            <label class="btn btn-sm btn-outline-primary day-btn"><input type="checkbox" class="d-none" name="days" value="3"> Thu</label>
+            <label class="btn btn-sm btn-outline-primary day-btn"><input type="checkbox" class="d-none" name="days" value="4"> Fri</label>
+            <label class="btn btn-sm btn-outline-primary day-btn"><input type="checkbox" class="d-none" name="days" value="5"> Sat</label>
+            <label class="btn btn-sm btn-outline-primary day-btn"><input type="checkbox" class="d-none" name="days" value="6"> Sun</label>
+          </div>
+        </div>
+        <!-- Monthly dates picker -->
+        <div class="mb-3 d-none" id="monthlyConfig">
+          <label class="form-label">Days of the month</label>
+          <div class="d-flex flex-wrap gap-1" id="monthlyDates">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Time (optional)</label>
+          <input type="time" class="form-control" id="routineTime">
+        </div>
+        <div class="row g-3">
+          <div class="col-6">
+            <label class="form-label">Points</label>
+            <input type="number" class="form-control" id="routinePoints" value="10" min="1" max="100">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Color</label>
+            <input type="color" class="form-control form-control-color w-100" id="routineColor" value="#6366f1">
+          </div>
+        </div>
+        <div class="mb-3 mt-3">
+          <label class="form-label">Icon</label>
+          <div class="d-flex flex-wrap gap-2" id="iconPicker">
+            {% for icon in icon_choices %}
+            <label class="btn btn-sm btn-outline-secondary icon-btn {% if forloop.first %}active{% endif %}">
+              <input type="radio" class="d-none" name="icon" value="{{ icon }}" {% if forloop.first %}checked{% endif %}>
+              <i class="bi {{ icon }}"></i>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="addRoutineResult" class="alert d-none mt-3"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveRoutine()">
+          <i class="bi bi-plus-lg me-1"></i>Add Routine
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Routine Modal -->
+<div class="modal fade" id="editRoutineModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Routine</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editRoutineId">
+        <div class="mb-3">
+          <label class="form-label">Name <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="editRoutineName" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <input type="text" class="form-control" id="editRoutineDesc">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Schedule</label>
+          <select class="form-select" id="editRoutineSchedule" onchange="toggleEditScheduleConfig()">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+        <div class="mb-3 d-none" id="editWeeklyConfig">
+          <label class="form-label">Days of the week</label>
+          <div class="d-flex flex-wrap gap-2">
+            <label class="btn btn-sm btn-outline-primary day-btn"><input type="checkbox" class="d-none" name="edit_days" value="0"> Mon</label>
+            <label class="btn btn-sm btn-outline-primary day-btn"><input type="checkbox" class="d-none" name="edit_days" value="1"> Tue</label>
+            <label class="btn btn-sm btn-outline-primary day-btn"><input type="checkbox" class="d-none" name="edit_days" value="2"> Wed</label>
+            <label class="btn btn-sm btn-outline-primary day-btn"><input type="checkbox" class="d-none" name="edit_days" value="3"> Thu</label>
+            <label class="btn btn-sm btn-outline-primary day-btn"><input type="checkbox" class="d-none" name="edit_days" value="4"> Fri</label>
+            <label class="btn btn-sm btn-outline-primary day-btn"><input type="checkbox" class="d-none" name="edit_days" value="5"> Sat</label>
+            <label class="btn btn-sm btn-outline-primary day-btn"><input type="checkbox" class="d-none" name="edit_days" value="6"> Sun</label>
+          </div>
+        </div>
+        <div class="mb-3 d-none" id="editMonthlyConfig">
+          <label class="form-label">Days of the month</label>
+          <div class="d-flex flex-wrap gap-1" id="editMonthlyDates"></div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Time (optional)</label>
+          <input type="time" class="form-control" id="editRoutineTime">
+        </div>
+        <div class="row g-3">
+          <div class="col-6">
+            <label class="form-label">Points</label>
+            <input type="number" class="form-control" id="editRoutinePoints" min="1" max="100">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Color</label>
+            <input type="color" class="form-control form-control-color w-100" id="editRoutineColor">
+          </div>
+        </div>
+        <div id="editRoutineResult" class="alert d-none mt-3"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveEditRoutine()">
+          <i class="bi bi-check-lg me-1"></i>Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const csrfToken = '{{ csrf_token }}';
+
+// ===== Toggle Routine Completion =====
+function toggleRoutine(routineId) {
+    const el = document.getElementById('routine-' + routineId);
+    const checkbox = el.querySelector('.routine-checkbox');
+    const icon = checkbox.querySelector('i');
+    const nameEl = el.querySelector('.routine-name');
+
+    fetch(`/tracker/routines/toggle/${routineId}/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrfToken}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) return;
+
+        // Update checkbox
+        if (data.completed) {
+            checkbox.classList.add('checked');
+            icon.className = 'bi bi-check-circle-fill';
+            el.classList.add('routine-completed');
+            nameEl.classList.add('text-decoration-line-through', 'text-muted');
+        } else {
+            checkbox.classList.remove('checked');
+            icon.className = 'bi bi-circle';
+            el.classList.remove('routine-completed');
+            nameEl.classList.remove('text-decoration-line-through', 'text-muted');
+        }
+
+        // Update stats
+        document.getElementById('totalPoints').textContent = data.total_points;
+        document.getElementById('currentStreak').innerHTML = data.current_streak + ' <small>days</small>';
+        document.getElementById('progressText').textContent = data.done_today + '/' + data.total_today;
+        const pct = data.total_today > 0 ? Math.round(data.done_today / data.total_today * 100) : 0;
+        document.getElementById('progressBar').style.width = pct + '%';
+
+        // All done badge
+        const badge = document.getElementById('allDoneBadge');
+        if (data.all_done) {
+            badge.classList.remove('d-none');
+        } else {
+            badge.classList.add('d-none');
+        }
+
+        // Confetti
+        if (data.trigger_confetti) {
+            if (data.all_done) {
+                // Big celebration burst
+                confetti({particleCount: 200, spread: 100, origin: {y: 0.6}});
+                setTimeout(() => confetti({particleCount: 100, angle: 60, spread: 55, origin: {x: 0}}), 250);
+                setTimeout(() => confetti({particleCount: 100, angle: 120, spread: 55, origin: {x: 1}}), 400);
+            } else {
+                confetti({particleCount: 80, spread: 70, origin: {y: 0.7}});
+            }
+        }
+    });
+}
+
+// ===== Schedule Config Toggle =====
+function toggleScheduleConfig() {
+    const type = document.getElementById('routineSchedule').value;
+    document.getElementById('weeklyConfig').classList.toggle('d-none', type !== 'weekly');
+    document.getElementById('monthlyConfig').classList.toggle('d-none', type !== 'monthly');
+    if (type === 'monthly') generateMonthlyDates('monthlyDates', 'dates');
+}
+
+function toggleEditScheduleConfig() {
+    const type = document.getElementById('editRoutineSchedule').value;
+    document.getElementById('editWeeklyConfig').classList.toggle('d-none', type !== 'weekly');
+    document.getElementById('editMonthlyConfig').classList.toggle('d-none', type !== 'monthly');
+    if (type === 'monthly') generateMonthlyDates('editMonthlyDates', 'edit_dates');
+}
+
+function generateMonthlyDates(containerId, inputName) {
+    const container = document.getElementById(containerId);
+    if (container.children.length > 0) return;
+    for (let i = 1; i <= 31; i++) {
+        const label = document.createElement('label');
+        label.className = 'btn btn-sm btn-outline-primary day-btn';
+        label.innerHTML = `<input type="checkbox" class="d-none" name="${inputName}" value="${i}"> ${i}`;
+        container.appendChild(label);
+    }
+}
+
+// ===== Day/Icon Button Toggle Styling =====
+document.addEventListener('click', function(e) {
+    const dayBtn = e.target.closest('.day-btn');
+    if (dayBtn) {
+        const cb = dayBtn.querySelector('input[type="checkbox"]');
+        if (cb) {
+            cb.checked = !cb.checked;
+            dayBtn.classList.toggle('active', cb.checked);
+        }
+    }
+    const iconBtn = e.target.closest('.icon-btn');
+    if (iconBtn) {
+        document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
+        iconBtn.classList.add('active');
+        iconBtn.querySelector('input').checked = true;
+    }
+});
+
+// ===== Save New Routine =====
+function saveRoutine() {
+    const name = document.getElementById('routineName').value.trim();
+    if (!name) return alert('Name is required');
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('description', document.getElementById('routineDesc').value.trim());
+    formData.append('schedule_type', document.getElementById('routineSchedule').value);
+    formData.append('time', document.getElementById('routineTime').value);
+    formData.append('points_value', document.getElementById('routinePoints').value);
+    formData.append('color', document.getElementById('routineColor').value);
+
+    const selectedIcon = document.querySelector('input[name="icon"]:checked');
+    formData.append('icon', selectedIcon ? selectedIcon.value : 'bi-check-circle');
+
+    // Weekly days
+    document.querySelectorAll('input[name="days"]:checked').forEach(cb => {
+        formData.append('days', cb.value);
+    });
+    // Monthly dates
+    document.querySelectorAll('input[name="dates"]:checked').forEach(cb => {
+        formData.append('dates', cb.value);
+    });
+
+    fetch('/tracker/routines/add/', {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrfToken},
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            const result = document.getElementById('addRoutineResult');
+            result.classList.remove('d-none', 'alert-success');
+            result.classList.add('alert-danger');
+            result.textContent = data.error;
+        }
+    });
+}
+
+// ===== Add Preset =====
+function addPreset(key) {
+    const formData = new FormData();
+    formData.append('preset_key', key);
+
+    fetch('/tracker/routines/preset/', {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrfToken},
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) location.reload();
+    });
+}
+
+function addPresetGroup(group) {
+    const formData = new FormData();
+    formData.append('group', group);
+
+    fetch('/tracker/routines/preset/', {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrfToken},
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) location.reload();
+    });
+}
+
+// ===== Edit Routine =====
+function openEditModal(id, name, desc, scheduleType, points, icon, color, configJson) {
+    document.getElementById('editRoutineId').value = id;
+    document.getElementById('editRoutineName').value = name;
+    document.getElementById('editRoutineDesc').value = desc;
+    document.getElementById('editRoutineSchedule').value = scheduleType;
+    document.getElementById('editRoutinePoints').value = points;
+    document.getElementById('editRoutineColor').value = color;
+
+    let config = {};
+    try { config = JSON.parse(configJson.replace(/'/g, '"')); } catch(e) {}
+
+    if (config.time) document.getElementById('editRoutineTime').value = config.time;
+    else document.getElementById('editRoutineTime').value = '';
+
+    toggleEditScheduleConfig();
+
+    // Pre-check days
+    if (scheduleType === 'weekly' && config.days) {
+        document.querySelectorAll('input[name="edit_days"]').forEach(cb => {
+            cb.checked = config.days.includes(parseInt(cb.value));
+            cb.closest('.day-btn').classList.toggle('active', cb.checked);
+        });
+    }
+
+    new bootstrap.Modal(document.getElementById('editRoutineModal')).show();
+}
+
+function saveEditRoutine() {
+    const id = document.getElementById('editRoutineId').value;
+    const name = document.getElementById('editRoutineName').value.trim();
+    if (!name) return alert('Name is required');
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('description', document.getElementById('editRoutineDesc').value.trim());
+    formData.append('schedule_type', document.getElementById('editRoutineSchedule').value);
+    formData.append('time', document.getElementById('editRoutineTime').value);
+    formData.append('points_value', document.getElementById('editRoutinePoints').value);
+    formData.append('color', document.getElementById('editRoutineColor').value);
+
+    document.querySelectorAll('input[name="edit_days"]:checked').forEach(cb => {
+        formData.append('days', cb.value);
+    });
+    document.querySelectorAll('input[name="edit_dates"]:checked').forEach(cb => {
+        formData.append('dates', cb.value);
+    });
+
+    fetch(`/tracker/routines/edit/${id}/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrfToken},
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) location.reload();
+        else {
+            const result = document.getElementById('editRoutineResult');
+            result.classList.remove('d-none', 'alert-success');
+            result.classList.add('alert-danger');
+            result.textContent = data.error;
+        }
+    });
+}
+
+// ===== Delete Routine =====
+function deleteRoutine(routineId) {
+    if (!confirm('Remove this routine?')) return;
+
+    fetch(`/tracker/routines/delete/${routineId}/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrfToken}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) location.reload();
+    });
+}
+</script>
+{% endblock %}

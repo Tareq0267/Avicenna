@@ -27,4 +27,20 @@ urlpatterns = [
     path('delete-dietary/<int:entry_id>/', views.delete_dietary_entry, name='delete_dietary_entry'),
     path('delete-exercise/<int:entry_id>/', views.delete_exercise_entry, name='delete_exercise_entry'),
     path('delete-weight/<int:entry_id>/', views.delete_weight_entry, name='delete_weight_entry'),
+
+    # Routine Tracker
+    path('routines/', views.routine_tracker, name='routine_tracker'),
+    path('routines/add/', views.add_routine, name='add_routine'),
+    path('routines/edit/<int:routine_id>/', views.edit_routine, name='edit_routine'),
+    path('routines/delete/<int:routine_id>/', views.delete_routine, name='delete_routine'),
+    path('routines/toggle/<int:routine_id>/', views.toggle_completion, name='toggle_completion'),
+    path('routines/preset/', views.add_preset, name='add_preset'),
+    path('routines/reorder/', views.reorder_routines, name='reorder_routines'),
+
+    # Update Log
+    path('changelog/', views.update_log, name='update_log'),
+
+    # Settings
+    path('settings/', views.settings_page, name='settings'),
+    path('settings/update-username/', views.update_username, name='update_username'),
 ]

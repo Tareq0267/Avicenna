@@ -204,3 +204,134 @@ class AIUsage(models.Model):
             timestamp__year=now.year,
             timestamp__month=now.month
         ).count()
+
+
+class Routine(models.Model):
+    """A recurring habit or task the user wants to track."""
+    SCHEDULE_TYPE_CHOICES = [
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='routines')
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    schedule_type = models.CharField(max_length=10, choices=SCHEDULE_TYPE_CHOICES, default='daily')
+    # Flexible scheduling via JSON:
+    # daily: {"time": "05:30"}
+    # weekly: {"days": [0,2,4], "time": "07:00"}  (0=Mon, 6=Sun)
+    # monthly: {"dates": [1, 15], "time": "09:00"}
+    schedule_config = models.JSONField(default=dict, blank=True)
+    preset_key = models.CharField(max_length=50, blank=True, help_text="Key of the preset this was created from")
+    points_value = models.PositiveIntegerField(default=10)
+    icon = models.CharField(max_length=50, default='bi-check-circle', help_text="Bootstrap icon class")
+    color = models.CharField(max_length=20, default='#6366f1', help_text="Hex color for display")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    order = models.PositiveIntegerField(default=0, help_text="Display order")
+
+    class Meta:
+        ordering = ['order', 'created_at']
+
+    def __str__(self):
+        return f"{self.name} ({self.user.username})"
+
+    def is_scheduled_for(self, date):
+        """Check if this routine is due on the given date."""
+        if not self.is_active:
+            return False
+        if self.schedule_type == 'daily':
+            return True
+        elif self.schedule_type == 'weekly':
+            days = self.schedule_config.get('days', [])
+            return date.weekday() in days if days else True
+        elif self.schedule_type == 'monthly':
+            dates = self.schedule_config.get('dates', [])
+            return date.day in dates if dates else True
+        return False
+
+    def get_scheduled_time(self):
+        """Return the scheduled time string, or None."""
+        return self.schedule_config.get('time')
+
+
+class CompletionRecord(models.Model):
+    """Records each time a routine is completed."""
+    routine = models.ForeignKey(Routine, on_delete=models.CASCADE, related_name='completions')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='routine_completions')
+    date = models.DateField()
+    completed_at = models.DateTimeField(auto_now_add=True)
+    points_earned = models.PositiveIntegerField(default=0)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ['routine', 'date']
+        ordering = ['-completed_at']
+        indexes = [
+            models.Index(fields=['user', 'date']),
+            models.Index(fields=['routine', 'date']),
+        ]
+
+    def __str__(self):
+        return f"{self.routine.name} completed by {self.user.username} on {self.date}"
+
+
+class UserPoints(models.Model):
+    """Cached gamification data per user."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='points')
+    total_points = models.PositiveIntegerField(default=0)
+    current_streak = models.PositiveIntegerField(default=0)
+    longest_streak = models.PositiveIntegerField(default=0)
+    last_completion_date = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user.username}: {self.total_points} pts, {self.current_streak} streak"
+
+    def record_completion(self, points, date):
+        """Add points and update streak on completion."""
+        self.total_points += points
+        if self.last_completion_date is None:
+            self.current_streak = 1
+        elif self.last_completion_date == date:
+            pass  # same day, no streak change
+        elif (date - self.last_completion_date).days == 1:
+            self.current_streak += 1
+        else:
+            self.current_streak = 1
+        self.last_completion_date = date
+        if self.current_streak > self.longest_streak:
+            self.longest_streak = self.current_streak
+        self.save()
+
+    def record_undo(self, points, date):
+        """Remove points when a completion is undone."""
+        self.total_points = max(0, self.total_points - points)
+        # Recalculate streak if undoing today's last completion
+        if self.last_completion_date == date:
+            remaining = CompletionRecord.objects.filter(user=self.user, date=date).exists()
+            if not remaining:
+                self._recalculate_streak()
+        self.save()
+
+    def _recalculate_streak(self):
+        """Walk backwards through completion dates to find current streak."""
+        from datetime import timedelta
+        dates = (
+            CompletionRecord.objects.filter(user=self.user)
+            .values_list('date', flat=True)
+            .distinct()
+            .order_by('-date')
+        )
+        streak = 0
+        expected = None
+        for d in dates:
+            if expected is None:
+                expected = d
+            if d == expected:
+                streak += 1
+                expected = d - timedelta(days=1)
+            else:
+                break
+        self.current_streak = streak
+        self.last_completion_date = dates[0] if dates else None

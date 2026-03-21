@@ -344,6 +344,119 @@ body {
   }
 }
 
+/* ===== Routine Tracker Styles ===== */
+
+.routine-item {
+  transition: background 0.15s;
+  border-radius: 0.5rem;
+}
+
+.routine-item:hover {
+  background: #f9fafb;
+}
+
+.routine-completed {
+  opacity: 0.7;
+}
+
+.routine-checkbox {
+  cursor: pointer;
+  font-size: 1.5rem;
+  color: #d1d5db;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.routine-checkbox.checked {
+  color: var(--routine-color, var(--primary));
+  transform: scale(1.1);
+}
+
+.routine-checkbox:hover {
+  color: var(--routine-color, var(--primary));
+}
+
+.routine-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.routine-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.preset-btn {
+  font-size: 0.8rem;
+  transition: all 0.15s;
+}
+
+.preset-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.day-btn.active,
+.icon-btn.active {
+  background: var(--primary) !important;
+  color: white !important;
+  border-color: var(--primary) !important;
+}
+
+/* ===== Changelog Styles ===== */
+
+.changelog-entry {
+  position: relative;
+  padding-left: 2rem;
+  padding-bottom: 2rem;
+}
+
+.changelog-entry::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 8px;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+
+.changelog-entry:last-child::before {
+  display: none;
+}
+
+.changelog-dot {
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 3px solid var(--bg);
+}
+
+@media (max-width: 576px) {
+  .routine-icon {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    font-size: 0.95rem;
+  }
+  .routine-checkbox {
+    font-size: 1.3rem;
+  }
+  .routine-name {
+    font-size: 0.85rem;
+  }
+}
+
 /* ===== Couples Mode / Partner View Styles ===== */
 
 /* Partner Banner (shown when viewing partner's dashboard) */
