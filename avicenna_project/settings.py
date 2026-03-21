@@ -16,7 +16,7 @@ DEBUG = True  # Set to False in production
 # SECURE_BROWSER_XSS_FILTER = True
 # SECURE_CONTENT_TYPE_NOSNIFF = True
 
-NGROK_URL = "https://d7e9-2001-e68-541b-1257-306c-b7df-2e47-ce10.ngrok-free.app"
+NGROK_URL = os.environ.get('NGROK_URL', 'https://example.ngrok.io')  # Default for testing
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost','cybilcut.pythonanywhere.com', NGROK_URL.replace('https://', '')]
 
