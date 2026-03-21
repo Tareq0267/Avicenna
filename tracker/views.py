@@ -1187,6 +1187,21 @@ def _get_love_letters():
     """Return love letter entries for special users (newest first)."""
     return [
         {
+            'version': '4',
+            'date': '22 March 2026',
+            'title': 'Your Streaks Are on Fire',
+            'greeting': 'Hii sayang~',
+            'message': "I made your routines even more fun! Now every routine tracks your streak — how many days in a row you've completed it. And I added this cute little progress ring on your dashboard that fills up as you check things off.",
+            'features': [
+                'Fire streak badges on each routine (keep the flame alive!)',
+                'Beautiful circular progress ring on your dashboard',
+                'Smooth satisfying animations when you check things off',
+                'Streaks are smart — weekend off-days won\'t break them',
+            ],
+            'closing': "Every streak you build makes me so proud of you. Keep going, I believe in you!",
+            'sign_off': 'Always yours',
+        },
+        {
             'version': '3',
             'date': '22 March 2026',
             'title': 'Your Routines, My Love',
@@ -1236,6 +1251,17 @@ def _get_love_letters():
 def _get_changelog():
     """Return the app changelog entries."""
     return [
+        {
+            'version': '2.2.0',
+            'date': '2026-03-22',
+            'title': 'Routine Streaks & Animations',
+            'changes': [
+                'Per-routine streak counter with fire badge — tracks consecutive days',
+                'Circular progress ring replaces progress pill on dashboard',
+                'Smooth check animations with satisfying bounce effects',
+                'Streaks are smart — skips non-scheduled days without breaking',
+            ],
+        },
         {
             'version': '2.1.0',
             'date': '2026-03-22',
