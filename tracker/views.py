@@ -264,6 +264,8 @@ def dashboard(request, view_partner=False):
         'routine_icon_choices': routine_icon_choices,
         'routine_preset_groups': routine_preset_groups,
         'routine_existing_presets': routine_existing_presets,
+        # Love letter (latest) for special users
+        'latest_love_letter': _get_love_letters()[0],
     }
     return render(request, 'tracker/dashboard.html', context)
 
@@ -1044,7 +1046,7 @@ def add_routine(request):
         schedule_type=schedule_type,
         schedule_config=schedule_config,
         icon=request.POST.get('icon', 'bi-check-circle'),
-        color=request.POST.get('color', '#6366f1'),
+        color=request.POST.get('color', '#818cf8'),
     )
 
     return JsonResponse({
@@ -1145,6 +1147,56 @@ def reorder_routines(request):
     return JsonResponse({'success': True})
 
 
+def _get_love_letters():
+    """Return love letter entries for special users (newest first)."""
+    return [
+        {
+            'version': '3',
+            'date': '22 March 2026',
+            'title': 'Your Routines, My Love',
+            'greeting': 'Hii sayang~',
+            'message': "I added something new just for you! Now you can track your daily routines — Solat, skincare, exercise, everything! And your AI coach knows about them too, so she'll cheer you on.",
+            'features': [
+                'Daily routine tracker on your dashboard',
+                'Pretty pastel color picker for your routines',
+                'AI coach now sees your routine progress',
+                'Your routines show up in the activity heatmap',
+            ],
+            'closing': 'I hope this helps you stay consistent, because you inspire me to be better every day.',
+            'sign_off': 'Always yours',
+        },
+        {
+            'version': '2',
+            'date': '21 March 2026',
+            'title': 'A New Home For You',
+            'greeting': 'Hello my cutiepie~',
+            'message': "I gave Avicenna a makeover! Everything is cleaner and prettier now. The settings page has your own profile with your cute little avatar.",
+            'features': [
+                'Beautiful new settings page with your profile',
+                'Compact routine card right on your dashboard',
+                'Charts now show ALL your data, not just 30 days',
+                'Cleaner navbar — less clutter, more love',
+            ],
+            'closing': "Every pixel was placed with you in mind.",
+            'sign_off': 'Love you always',
+        },
+        {
+            'version': '1',
+            'date': '15 March 2026',
+            'title': 'The First Letter',
+            'greeting': 'Hii my cutiepie Qaisara~',
+            'message': "Since you are one of the most loyal Avicenna members, I have given you a special version of this app. For you only, it's Avicenna with love.",
+            'features': [
+                'UNOBSTRUCTED use of the AI feature',
+                'Your very own pink theme',
+                'This love letter system, just for you',
+            ],
+            'closing': "Remember to not overuse it okay sayang~",
+            'sign_off': 'Love you',
+        },
+    ]
+
+
 def _get_changelog():
     """Return the app changelog entries."""
     return [
@@ -1229,6 +1281,7 @@ def settings_page(request):
     """Settings page combining Guide, Changelog, and Account actions."""
     context = {
         'changelog': _get_changelog(),
+        'love_letters': _get_love_letters(),
     }
     return render(request, 'tracker/settings.html', context)
 

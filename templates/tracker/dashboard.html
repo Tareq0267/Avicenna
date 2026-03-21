@@ -3,7 +3,7 @@
 
 {% block content %}
 <!-- Special Love Letter Modal for Qaisara -->
-{% if FOR_HER %}
+{% if FOR_HER and latest_love_letter %}
 <div class="modal fade" id="loveLetterModal" tabindex="-1" aria-labelledby="loveLetterModalLabel" aria-hidden="true" data-bs-backdrop="static">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content love-letter-content">
@@ -12,27 +12,24 @@
       </div>
       <div class="modal-header love-letter-header">
         <h5 class="modal-title" id="loveLetterModalLabel">
-          <i class="bi bi-envelope-heart-fill me-2"></i>A Letter For You
+          <i class="bi bi-envelope-heart-fill me-2"></i>{{ latest_love_letter.title }}
         </h5>
       </div>
       <div class="modal-body love-letter-body">
-        <p class="love-greeting">Hii my cutiepie Qaisara <i class="bi bi-heart-fill text-danger"></i></p>
-        <p class="love-message">
-          Since you are one of the most loyal Avicenna member, I have given you a special version of this app.
-          For you only, it's <strong>Avicenna<i class="bi bi-heart-fill text-danger ms-1"></i></strong>
-        </p>
+        <div class="love-letter-badge">Letter #{{ latest_love_letter.version }} &middot; {{ latest_love_letter.date }}</div>
+        <p class="love-greeting">{{ latest_love_letter.greeting }} <i class="bi bi-heart-fill text-danger"></i></p>
+        <p class="love-message">{{ latest_love_letter.message }}</p>
         <div class="love-benefits">
-          <p class="benefits-title"><i class="bi bi-gift-fill me-2"></i>Benefits:</p>
+          <p class="benefits-title"><i class="bi bi-gift-fill me-2"></i>What's new for you:</p>
+          {% for feature in latest_love_letter.features %}
           <p class="benefit-item">
-            <i class="bi bi-check-heart-fill text-success me-2"></i>
-            You are given <strong>UNOBSTRUCTED</strong> use of the AI feature <i class="bi bi-heart-fill text-danger"></i>
+            <i class="bi bi-check-heart-fill text-success me-2"></i>{{ feature }}
           </p>
-          <p class="cute-warning">
-            <i class="bi bi-emoji-heart-eyes me-1"></i> Remember to not overuse it okay sayang~
-          </p>
+          {% endfor %}
         </div>
+        <p class="love-closing-msg">{{ latest_love_letter.closing }}</p>
         <div class="love-signature">
-          <p class="love-closing">Love you <i class="bi bi-hearts text-danger"></i></p>
+          <p class="love-closing">{{ latest_love_letter.sign_off }} <i class="bi bi-hearts text-danger"></i></p>
           <p class="love-name">Tareq</p>
           <p class="love-titles">(your beloved boyfriend / future husband / your date / your love / your bam bam boy)</p>
         </div>
@@ -73,10 +70,7 @@
   animation: heartPulse 1.5s ease-in-out infinite;
 }
 
-.envelope-heart i {
-  font-size: 1.8rem;
-  color: white;
-}
+.envelope-heart i { font-size: 1.8rem; color: white; }
 
 @keyframes heartPulse {
   0%, 100% { transform: translateX(-50%) scale(1); }
@@ -94,7 +88,26 @@
 .love-letter-header .modal-title {
   color: #ff1493;
   font-family: 'Georgia', serif;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
+}
+
+.love-letter-badge {
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.love-letter-badge {
+  display: inline-block;
+  background: #ff69b4;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.75rem;
+  border-radius: 1rem;
+  letter-spacing: 0.5px;
+  width: auto;
+  margin: 0 auto 0.75rem;
+  text-align: center;
 }
 
 .love-letter-body {
@@ -102,19 +115,18 @@
   font-family: 'Georgia', serif;
   color: #8b4567;
   line-height: 1.8;
+  text-align: center;
 }
 
 .love-greeting {
   font-size: 1.3rem;
   font-weight: bold;
   color: #ff1493;
-  text-align: center;
   margin-bottom: 1rem;
 }
 
 .love-message {
   font-size: 1rem;
-  text-align: center;
   margin-bottom: 1.5rem;
 }
 
@@ -124,6 +136,7 @@
   padding: 1rem 1.5rem;
   margin-bottom: 1.5rem;
   border: 1px dashed #ff69b4;
+  text-align: left;
 }
 
 .benefits-title {
@@ -134,16 +147,14 @@
 
 .benefit-item {
   font-size: 0.95rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
-.cute-warning {
-  font-size: 0.9rem;
-  color: #ff69b4;
+.love-closing-msg {
+  font-size: 0.95rem;
   font-style: italic;
-  text-align: center;
-  margin-top: 1rem;
-  margin-bottom: 0;
+  color: #c77daa;
+  margin-bottom: 1rem;
 }
 
 .love-signature {
@@ -152,10 +163,7 @@
   border-top: 1px dashed #ffb6c1;
 }
 
-.love-closing {
-  font-size: 1.1rem;
-  margin-bottom: 0.3rem;
-}
+.love-closing { font-size: 1.1rem; margin-bottom: 0.3rem; }
 
 .love-name {
   font-size: 1.4rem;
@@ -207,17 +215,8 @@
   animation: floatHeart 3s ease-in-out infinite;
 }
 
-.love-letter-content::before {
-  top: 20%;
-  left: -10px;
-  animation-delay: 0s;
-}
-
-.love-letter-content::after {
-  top: 60%;
-  right: -10px;
-  animation-delay: 1.5s;
-}
+.love-letter-content::before { top: 20%; left: -10px; animation-delay: 0s; }
+.love-letter-content::after { top: 60%; right: -10px; animation-delay: 1.5s; }
 
 @keyframes floatHeart {
   0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.6; }
@@ -226,13 +225,14 @@
 </style>
 
 <script>
-// Show love letter modal on first visit (per session)
+// Show love letter modal when there's a new letter (tracked by version in localStorage)
 document.addEventListener('DOMContentLoaded', function() {
-  const loveLetterShown = sessionStorage.getItem('loveLetterShown');
-  if (!loveLetterShown) {
+  const currentVersion = '{{ latest_love_letter.version }}';
+  const lastSeenVersion = localStorage.getItem('loveLetterVersion');
+  if (lastSeenVersion !== currentVersion) {
     const loveModal = new bootstrap.Modal(document.getElementById('loveLetterModal'));
     loveModal.show();
-    sessionStorage.setItem('loveLetterShown', 'true');
+    localStorage.setItem('loveLetterVersion', currentVersion);
   }
 });
 </script>

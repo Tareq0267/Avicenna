@@ -110,6 +110,53 @@
   </div>
 </div>
 
+<!-- Love Letters Card (special users only) -->
+{% if FOR_HER %}
+<div class="settings-card mb-3 love-letters-card">
+  <div class="settings-card-header" onclick="toggleSettingsCard('loveLettersCollapse', this)">
+    <div class="d-flex align-items-center">
+      <div class="settings-card-icon" style="background: linear-gradient(135deg, #ff69b4, #ff1493);">
+        <i class="bi bi-envelope-heart-fill"></i>
+      </div>
+      <div class="ms-3">
+        <h6 class="mb-0 fw-bold">Love Letters</h6>
+        <small class="text-muted">From Tareq, with love</small>
+      </div>
+    </div>
+    <i class="bi bi-chevron-right settings-chevron"></i>
+  </div>
+  <div class="settings-card-body" id="loveLettersCollapse">
+    <div class="love-letters-inner">
+      {% for letter in love_letters %}
+      <div class="love-letter-entry {% if forloop.first %}latest{% endif %}">
+        <div class="love-letter-entry-header">
+          {% if forloop.first %}<span class="love-letter-new-badge">New</span>{% endif %}
+          <span class="love-letter-num">Letter #{{ letter.version }}</span>
+          <span class="love-letter-entry-date">{{ letter.date }}</span>
+        </div>
+        <h6 class="love-letter-entry-title">{{ letter.title }}</h6>
+        <p class="love-letter-entry-greeting">{{ letter.greeting }} <i class="bi bi-heart-fill"></i></p>
+        <p class="love-letter-entry-message">{{ letter.message }}</p>
+        <div class="love-letter-entry-features">
+          {% for feature in letter.features %}
+          <div class="love-letter-feature">
+            <i class="bi bi-heart-fill"></i>
+            <span>{{ feature }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        <p class="love-letter-entry-closing">{{ letter.closing }}</p>
+        <div class="love-letter-entry-sign">
+          <span>{{ letter.sign_off }},</span>
+          <strong>Tareq</strong> <i class="bi bi-hearts text-danger"></i>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <!-- Logout -->
 <div class="mt-4 mb-3">
   <a href="/accounts/logout/" class="logout-btn">
@@ -265,6 +312,133 @@
 
 /* Guide inside settings */
 .settings-card-body .guide-wrapper { padding: 0; }
+
+/* Love Letters Card */
+.love-letters-card {
+  border: 2px solid #fce7f3;
+}
+
+.love-letters-inner { padding: 0; }
+
+.love-letter-entry {
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #fff5f8, #fdf2f8);
+  border-radius: 1rem;
+  border: 1px solid #fce7f3;
+  position: relative;
+}
+
+.love-letter-entry:last-child { margin-bottom: 0; }
+
+.love-letter-entry.latest {
+  border-color: #f9a8d4;
+  box-shadow: 0 2px 12px rgba(255, 105, 180, 0.1);
+}
+
+.love-letter-entry-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.love-letter-new-badge {
+  background: linear-gradient(135deg, #ff69b4, #ff1493);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.15rem 0.6rem;
+  border-radius: 1rem;
+}
+
+.love-letter-num {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #be185d;
+}
+
+.love-letter-entry-date {
+  font-size: 0.8rem;
+  color: #d4a0b9;
+  margin-left: auto;
+}
+
+.love-letter-entry-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #be185d;
+  margin-bottom: 0.75rem;
+  font-family: 'Georgia', serif;
+}
+
+.love-letter-entry-greeting {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ff1493;
+  margin-bottom: 0.5rem;
+  font-family: 'Georgia', serif;
+}
+
+.love-letter-entry-greeting i { font-size: 0.75rem; color: #ff69b4; }
+
+.love-letter-entry-message {
+  font-size: 0.9rem;
+  color: #8b4567;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+  font-family: 'Georgia', serif;
+}
+
+.love-letter-entry-features {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border: 1px dashed #f9a8d4;
+}
+
+.love-letter-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  font-size: 0.85rem;
+  color: #6b4c5e;
+}
+
+.love-letter-feature i {
+  color: #f472b6;
+  font-size: 0.7rem;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.love-letter-entry-closing {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #c77daa;
+  margin-bottom: 0.75rem;
+  font-family: 'Georgia', serif;
+}
+
+.love-letter-entry-sign {
+  text-align: right;
+  font-family: 'Georgia', serif;
+  font-size: 0.9rem;
+  color: #be185d;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #f9a8d4;
+}
+
+.love-letter-entry-sign strong {
+  font-size: 1.1rem;
+  font-style: italic;
+  color: #ff1493;
+}
 
 /* Logout Button */
 .logout-btn {
