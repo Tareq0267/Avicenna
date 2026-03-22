@@ -16,6 +16,8 @@ class UserProfileInline(admin.StackedInline):
     fk_name = 'user'
     fields = (
         'partner',
+        ('subscription_tier', 'tier_override'),
+        'tier_override_note',
         'ai_enabled',
         ('fitness_goal', 'daily_calorie_goal'),
         ('age', 'gender'),
@@ -25,13 +27,35 @@ class UserProfileInline(admin.StackedInline):
 
 
 class UserAdmin(BaseUserAdmin):
-    """Extended User admin with profile inline."""
+    """Extended User admin with profile inline and tier management."""
     inlines = (UserProfileInline,)
+    actions = ['set_tier_free', 'set_tier_plus', 'set_tier_pro']
 
     def get_inline_instances(self, request, obj=None):
         if not obj:
             return []
         return super().get_inline_instances(request, obj)
+
+    def _set_tier(self, request, queryset, tier):
+        for user in queryset:
+            profile = user.profile
+            profile.subscription_tier = tier
+            profile.tier_override = True
+            profile.tier_override_note = f"Set by admin {request.user.username}"
+            profile.save()
+        self.message_user(request, f"{queryset.count()} user(s) set to {tier.title()} tier.")
+
+    def set_tier_free(self, request, queryset):
+        self._set_tier(request, queryset, 'free')
+    set_tier_free.short_description = "Set selected users to Free tier"
+
+    def set_tier_plus(self, request, queryset):
+        self._set_tier(request, queryset, 'plus')
+    set_tier_plus.short_description = "Set selected users to Plus tier (admin override)"
+
+    def set_tier_pro(self, request, queryset):
+        self._set_tier(request, queryset, 'pro')
+    set_tier_pro.short_description = "Set selected users to Pro tier (admin override)"
 
 
 # Unregister the default User admin and register our custom one

@@ -7,6 +7,7 @@ urlpatterns = [
     path('', views.dashboard, name='dashboard-root'),
     path('import-json/', views.import_json, name='import_json'),
     path('guide/', views.guide, name='guide'),
+    path('pricing/', views.pricing_page, name='pricing'),
 
     # Update Log
     path('changelog/', views.update_log, name='update_log'),

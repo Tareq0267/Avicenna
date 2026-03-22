@@ -63,6 +63,7 @@ class TestUserProfileInline:
             'profile-0-id': user.profile.pk,
             'profile-0-user': user.pk,
             'profile-0-partner': user2.pk,
+            'profile-0-subscription_tier': 'free',
         }
 
         response = admin_client.post(url, data)

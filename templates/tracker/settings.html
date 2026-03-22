@@ -27,6 +27,48 @@
 <!-- Settings Section -->
 <div class="settings-section-label">Settings</div>
 
+<!-- Subscription Tier Card -->
+<div class="settings-card mb-3">
+  <div class="settings-card-header" onclick="toggleSettingsCard('tierCollapse', this)">
+    <div class="d-flex align-items-center">
+      <div class="settings-card-icon" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+        <i class="bi bi-stars"></i>
+      </div>
+      <div class="ms-3">
+        <h6 class="mb-0 fw-bold">Subscription</h6>
+        <small class="text-muted">{{ tier_info.tier_display|default:"Free" }} plan</small>
+      </div>
+    </div>
+    <i class="bi bi-chevron-right settings-chevron"></i>
+  </div>
+  <div class="settings-card-body" id="tierCollapse">
+    <p class="mb-2">You are on the <strong>{{ tier_info.tier_display|default:"Free" }}</strong> plan.</p>
+    <ul class="list-unstyled small mb-3">
+      {% if tier_info.has_ai %}
+        <li class="mb-1"><i class="bi bi-check-circle-fill text-success me-1"></i>AI food logging enabled</li>
+      {% else %}
+        <li class="mb-1 text-muted"><i class="bi bi-x-circle me-1"></i>AI food logging (upgrade to Plus)</li>
+      {% endif %}
+      {% if tier_info.has_image_ai %}
+        <li class="mb-1"><i class="bi bi-check-circle-fill text-success me-1"></i>AI image analysis enabled</li>
+      {% else %}
+        <li class="mb-1 text-muted"><i class="bi bi-x-circle me-1"></i>AI image analysis (upgrade to Pro)</li>
+      {% endif %}
+      {% if tier_info.show_ads %}
+        <li class="mb-1 text-muted"><i class="bi bi-megaphone me-1"></i>Ads shown (upgrade to remove)</li>
+      {% else %}
+        <li class="mb-1"><i class="bi bi-check-circle-fill text-success me-1"></i>Ad-free experience</li>
+      {% endif %}
+    </ul>
+    <a href="{% url 'tracker:pricing' %}" class="btn btn-sm btn-outline-primary">
+      {% if tier_info.current_tier == 'free' %}View Plans{% else %}Manage Plan{% endif %}
+    </a>
+    {% if tier_info.is_override %}
+      <span class="badge bg-info ms-2">Admin granted</span>
+    {% endif %}
+  </div>
+</div>
+
 <!-- Guide Card -->
 <div class="settings-card mb-3">
   <div class="settings-card-header" onclick="toggleSettingsCard('guideCollapse', this)">

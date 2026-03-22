@@ -1,7 +1,7 @@
 from .core import (
     dashboard, partner_dashboard, import_json, guide,
     custom_logout, register, update_log, settings_page, update_username,
-    get_partner, _get_routine_streak,
+    pricing_page, get_partner, _get_routine_streak,
 )
 from .diet import (
     delete_dietary_entry, delete_weight_entry, add_weight,
@@ -17,7 +17,7 @@ from .routines import (
 __all__ = [
     # core
     'dashboard', 'partner_dashboard', 'import_json', 'guide',
-    'custom_logout', 'register', 'update_log', 'settings_page', 'update_username',
+    'custom_logout', 'register', 'update_log', 'settings_page', 'update_username', 'pricing_page',
     # diet
     'delete_dietary_entry', 'delete_weight_entry', 'add_weight',
     'daily_recap', 'calorie_setup', 'update_calorie_settings',

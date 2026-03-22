@@ -4,23 +4,44 @@ Protects against API abuse and controls costs.
 """
 from functools import wraps
 from django.http import JsonResponse
-from django.conf import settings
 from tracker.models import AIUsage
 
 
-# Configurable limits - adjust these based on your budget
-DEFAULT_HOURLY_LIMIT = 10  # 10 requests per hour per user
-DEFAULT_DAILY_LIMIT = 30   # 30 requests per day per user
-DEFAULT_MONTHLY_LIMIT = 200  # 200 requests per month per user
+# Tier-based rate limits
+TIER_LIMITS = {
+    'free': {
+        'hourly': 0,
+        'daily': 0,
+        'monthly': 0,
+        'image_allowed': False,
+    },
+    'plus': {
+        'hourly': 5,
+        'daily': 10,
+        'monthly': 200,
+        'image_allowed': False,
+    },
+    'pro': {
+        'hourly': 10,
+        'daily': 30,
+        'monthly': 500,
+        'image_allowed': True,
+    },
+}
 
 
-def get_rate_limits():
-    """Get rate limits from settings or use defaults."""
-    return {
-        'hourly': getattr(settings, 'AI_HOURLY_LIMIT', DEFAULT_HOURLY_LIMIT),
-        'daily': getattr(settings, 'AI_DAILY_LIMIT', DEFAULT_DAILY_LIMIT),
-        'monthly': getattr(settings, 'AI_MONTHLY_LIMIT', DEFAULT_MONTHLY_LIMIT),
-    }
+def get_user_tier(user):
+    """Get the user's subscription tier."""
+    try:
+        return user.profile.subscription_tier
+    except Exception:
+        return 'free'
+
+
+def get_rate_limits(user):
+    """Get rate limits based on user's subscription tier."""
+    tier = get_user_tier(user)
+    return TIER_LIMITS.get(tier, TIER_LIMITS['free'])
 
 
 def is_special_user(user):
@@ -30,7 +51,7 @@ def is_special_user(user):
 
 def check_rate_limit(user):
     """
-    Check if user has exceeded rate limits.
+    Check if user has exceeded rate limits based on their subscription tier.
     Special users (in 'special' group) have unlimited access.
 
     Returns:
@@ -45,7 +66,16 @@ def check_rate_limit(user):
             'unlimited': True,
         }
 
-    limits = get_rate_limits()
+    limits = get_rate_limits(user)
+
+    # Free tier — no AI access
+    if limits['daily'] == 0:
+        return False, "AI features require a Plus or Pro subscription.", {
+            'hourly_remaining': 0,
+            'daily_remaining': 0,
+            'monthly_remaining': 0,
+            'upgrade_required': True,
+        }
 
     # Check hourly limit
     hourly_count = AIUsage.get_usage_count(user, hours=1)
@@ -88,17 +118,9 @@ def ai_rate_limit(view_func):
     """
     Decorator to enforce rate limits on AI endpoints.
     Must be used with @login_required.
-
-    Usage:
-        @login_required
-        @ai_rate_limit
-        @require_POST
-        def my_ai_view(request):
-            ...
     """
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
-        # Check rate limit
         allowed, error_msg, remaining = check_rate_limit(request.user)
 
         if not allowed:
@@ -109,7 +131,6 @@ def ai_rate_limit(view_func):
                 'remaining': remaining
             }, status=429)
 
-        # Add remaining quota to request for view to use
         request.ai_quota_remaining = remaining
 
         return view_func(request, *args, **kwargs)
@@ -118,16 +139,7 @@ def ai_rate_limit(view_func):
 
 
 def log_ai_usage(user, request_type, success=True, error_message='', tokens_used=0):
-    """
-    Log AI API usage for tracking and analytics.
-
-    Args:
-        user: Django User instance
-        request_type: 'text' or 'image'
-        success: Whether the request succeeded
-        error_message: Error message if failed
-        tokens_used: Number of tokens consumed (if available)
-    """
+    """Log AI API usage for tracking and analytics."""
     AIUsage.objects.create(
         user=user,
         request_type=request_type,
@@ -141,17 +153,18 @@ def get_user_quota_info(user):
     """
     Get user's current quota information.
     Special users get unlimited access with a cute reminder.
-
-    Returns:
-        dict with usage counts and remaining quota
     """
+    tier = get_user_tier(user)
+
     # Special users have unlimited access
     if is_special_user(user):
         hourly_count = AIUsage.get_usage_count(user, hours=1)
         daily_count = AIUsage.get_daily_count(user)
         monthly_count = AIUsage.get_monthly_count(user)
         return {
+            'tier': tier,
             'unlimited': True,
+            'image_allowed': True,
             'special_message': "You have unlimited AI access, sayang! But remember not to overuse it okay~ ",
             'limits': {'hourly': '∞', 'daily': '∞', 'monthly': '∞'},
             'usage': {
@@ -170,14 +183,29 @@ def get_user_quota_info(user):
             }
         }
 
-    limits = get_rate_limits()
+    limits = get_rate_limits(user)
+
+    # Free tier — no AI
+    if limits['daily'] == 0:
+        return {
+            'tier': tier,
+            'unlimited': False,
+            'image_allowed': False,
+            'upgrade_required': True,
+            'limits': limits,
+            'usage': {'hourly': 0, 'daily': 0, 'monthly': 0},
+            'remaining': {'hourly': 0, 'daily': 0, 'monthly': 0},
+            'percentage_used': {'daily': 0, 'monthly': 0},
+        }
 
     hourly_count = AIUsage.get_usage_count(user, hours=1)
     daily_count = AIUsage.get_daily_count(user)
     monthly_count = AIUsage.get_monthly_count(user)
 
     return {
+        'tier': tier,
         'unlimited': False,
+        'image_allowed': limits['image_allowed'],
         'limits': limits,
         'usage': {
             'hourly': hourly_count,

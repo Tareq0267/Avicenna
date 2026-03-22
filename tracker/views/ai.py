@@ -16,19 +16,31 @@ from tracker.services.calorie_calculator import get_calorie_status
 @login_required
 def ai_food_log(request):
     """Render the AI food logging page."""
-    # Check if user has AI access enabled
-    if not hasattr(request.user, 'profile') or not request.user.profile.ai_enabled:
+    # Check if user's tier grants AI access
+    if not hasattr(request.user, 'profile') or not request.user.profile.has_ai_access():
         return render(request, 'tracker/ai_access_denied.html', status=403)
-    return render(request, 'tracker/ai_food_log.html')
+    return render(request, 'tracker/ai_food_log.html', {
+        'image_allowed': request.user.profile.has_image_ai(),
+    })
 
 
 @require_POST
 @login_required
 def ai_parse_food(request):
     """Process text or image input through AI and return structured data."""
-    # Check if user has AI access enabled
-    if not hasattr(request.user, 'profile') or not request.user.profile.ai_enabled:
-        return JsonResponse({'success': False, 'error': 'AI features not enabled for your account'}, status=403)
+    # Check if user's tier grants AI access
+    if not hasattr(request.user, 'profile') or not request.user.profile.has_ai_access():
+        return JsonResponse({'success': False, 'error': 'AI features require a Plus or Pro subscription.'}, status=403)
+
+    request_type = 'image' if request.FILES.get('image') else 'text'
+
+    # Check image tier gating (Pro only)
+    if request_type == 'image' and not request.user.profile.has_image_ai():
+        return JsonResponse({
+            'success': False,
+            'error': 'Image analysis requires a Pro subscription. Upgrade to use photo logging!',
+            'upgrade_required': True,
+        }, status=403)
 
     # Apply rate limiting
     allowed, error_msg, remaining = check_rate_limit(request.user)
@@ -40,8 +52,6 @@ def ai_parse_food(request):
             'rate_limit': True,
             'remaining': remaining
         }, status=429)
-
-    request_type = 'image' if request.FILES.get('image') else 'text'
 
     try:
         # Get user's calorie context for personalized feedback
@@ -126,9 +136,9 @@ def ai_parse_food(request):
 @login_required
 def ai_save_food(request):
     """Save AI-parsed (and user-edited) food and exercise data."""
-    # Check if user has AI access enabled
-    if not hasattr(request.user, 'profile') or not request.user.profile.ai_enabled:
-        return JsonResponse({'success': False, 'error': 'AI features not enabled for your account'}, status=403)
+    # Check if user's tier grants AI access
+    if not hasattr(request.user, 'profile') or not request.user.profile.has_ai_access():
+        return JsonResponse({'success': False, 'error': 'AI features require a Plus or Pro subscription.'}, status=403)
 
     try:
         raw_json = request.POST.get('json_data', '').strip()
@@ -240,9 +250,9 @@ def ai_save_food(request):
 @login_required
 def ai_quota_status(request):
     """Get user's current AI quota status."""
-    # Check if user has AI access enabled
-    if not hasattr(request.user, 'profile') or not request.user.profile.ai_enabled:
-        return JsonResponse({'success': False, 'error': 'AI features not enabled for your account'}, status=403)
+    # Check if user's tier grants AI access
+    if not hasattr(request.user, 'profile') or not request.user.profile.has_ai_access():
+        return JsonResponse({'success': False, 'error': 'AI features require a Plus or Pro subscription.'}, status=403)
 
     quota_info = get_user_quota_info(request.user)
     return JsonResponse({

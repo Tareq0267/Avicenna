@@ -159,7 +159,7 @@
         <!-- Right side: buttons + toggler -->
         <div class="d-flex align-items-center gap-1 ms-auto">
           {% if user.is_authenticated %}
-            {% if user.profile.ai_enabled %}
+            {% if HAS_AI_ACCESS %}
             <a href="{% url 'tracker:ai_food_log' %}" class="btn btn-sm btn-success">
               <i class="bi bi-robot"></i><span class="d-none d-sm-inline ms-1">AI Log</span>
             </a>
@@ -191,6 +191,15 @@
         </div>
       </div>
     </nav>
+
+    {% if SHOW_ADS and user.is_authenticated %}
+    <div class="ad-banner text-center py-2" style="background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+      <small class="text-muted">
+        <!-- Ad placeholder — replace with actual ad code (e.g. Google AdSense) -->
+        <i class="bi bi-stars me-1"></i>Upgrade to <a href="{% url 'tracker:pricing' %}" class="fw-semibold">Plus</a> to remove ads and unlock AI features
+      </small>
+    </div>
+    {% endif %}
 
     <main class="container py-4">
       {% block content %}{% endblock %}

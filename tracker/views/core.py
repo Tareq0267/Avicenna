@@ -544,6 +544,14 @@ def _get_changelog():
     ]
 
 
+def pricing_page(request):
+    """Display the pricing/subscription tiers page."""
+    current_tier = 'free'
+    if request.user.is_authenticated and hasattr(request.user, 'profile'):
+        current_tier = request.user.profile.subscription_tier
+    return render(request, 'tracker/pricing.html', {'current_tier': current_tier})
+
+
 @login_required
 def update_log(request):
     """Render the changelog / update log page."""
@@ -553,9 +561,22 @@ def update_log(request):
 @login_required
 def settings_page(request):
     """Settings page combining Guide, Changelog, and Account actions."""
+    tier_info = {}
+    if hasattr(request.user, 'profile'):
+        profile = request.user.profile
+        tier_info = {
+            'current_tier': profile.subscription_tier,
+            'tier_display': profile.get_subscription_tier_display(),
+            'is_override': profile.tier_override,
+            'show_ads': profile.show_ads(),
+            'has_ai': profile.has_ai_access(),
+            'has_image_ai': profile.has_image_ai(),
+        }
+
     context = {
         'changelog': _get_changelog(),
         'love_letters': _get_love_letters(),
+        'tier_info': tier_info,
     }
     return render(request, 'tracker/settings.html', context)
 

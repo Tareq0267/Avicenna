@@ -26,6 +26,12 @@ ACTIVITY_CHOICES = [
     ('extra', 'Extra Active (very active + physical job)'),
 ]
 
+TIER_CHOICES = [
+    ('free', 'Free'),
+    ('plus', 'Plus'),
+    ('pro', 'Pro'),
+]
+
 
 class UserProfile(models.Model):
     """Extended user profile for couples mode, AI settings, and fitness goals."""
@@ -40,7 +46,23 @@ class UserProfile(models.Model):
     )
     ai_enabled = models.BooleanField(
         default=False,
-        help_text="Allow this user to access AI food logging features"
+        help_text="(Deprecated) Use subscription_tier instead"
+    )
+
+    # Subscription Tier
+    subscription_tier = models.CharField(
+        max_length=10,
+        choices=TIER_CHOICES,
+        default='free',
+        help_text="Current subscription tier"
+    )
+    tier_override = models.BooleanField(
+        default=False,
+        help_text="Admin manually granted this tier (bypasses payment)"
+    )
+    tier_override_note = models.TextField(
+        blank=True,
+        help_text="Admin note for why tier was overridden"
     )
 
     # Fitness Profile Fields
@@ -85,6 +107,18 @@ class UserProfile(models.Model):
         default=False,
         help_text="Whether user has completed calorie goal setup"
     )
+
+    def has_ai_access(self):
+        """Check if user's tier grants AI access (Plus or Pro)."""
+        return self.subscription_tier in ('plus', 'pro')
+
+    def has_image_ai(self):
+        """Check if user's tier grants image AI (Pro only)."""
+        return self.subscription_tier == 'pro'
+
+    def show_ads(self):
+        """Free tier users see ads."""
+        return self.subscription_tier == 'free'
 
     def __str__(self):
         partner_name = self.partner.username if self.partner else "No partner"
