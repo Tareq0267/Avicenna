@@ -107,7 +107,7 @@ def calculate_calorie_goal_for_user(user):
     Returns:
         Daily calorie goal as integer, or None if profile incomplete
     """
-    from .models import WeightEntry
+    from tracker.models import WeightEntry
 
     try:
         profile = user.profile
@@ -148,7 +148,7 @@ def get_calorie_status(user):
     """
     from django.utils import timezone
     from django.db.models import Sum
-    from .models import DietaryEntry
+    from tracker.models import DietaryEntry
 
     today = timezone.now().date()
 

@@ -5,7 +5,7 @@ Protects against API abuse and controls costs.
 from functools import wraps
 from django.http import JsonResponse
 from django.conf import settings
-from .models import AIUsage
+from tracker.models import AIUsage
 
 
 # Configurable limits - adjust these based on your budget
